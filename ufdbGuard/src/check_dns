@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# check_dns - check the name resolver on this host
+#
+# $Id: check_dns,v 1.5 2016/12/12 15:19:57 root Exp root $
+#
+# Check DNS for
+# - smtp.urlfilterdb.com
+# - cgibin.urlfilterdb.com
+
+if [ -d /usr/xpg4/bin ]
+then
+   # to get a standard 'grep' on Solaris:
+   PATH=/usr/xpg4/bin:$PATH
+   export PATH
+fi
+
+ME=check_dns
+
+
+if [ "$1" != "no"  -a  "$1" != "" ]
+then
+   LOOKUPCMD="$1"
+else
+   LOOKUPCMD="$2"
+fi
+export LOOKUPCMD
+
+ERROR=no
+
+LC_ALL=C
+LC_CTYPE=C
+export LC_ALL LC_CTYPE
+
+for host in   \
+	updates.urlfilterdb.com  \
+	cgibin.urlfilterdb.com  
+do
+   result=`$LOOKUPCMD $host 2>/dev/null | grep -i -E -e "Name:.*$host" -e " has address " `
+   if [ "$result" = "" ]
+   then
+      ERROR=yes
+      echo "cannot resolve hostname \"$host\" using $LOOKUPCMD"
+   fi
+done
+
+if [ $ERROR = yes ]
+then
+   echo "*****   Check the name resolver on this system.  *****"
+   echo "*****   ufdbGuard does not function properly if it cannot resolve public hostnames.  *****"
+   echo
+fi
+
+exit 0
+

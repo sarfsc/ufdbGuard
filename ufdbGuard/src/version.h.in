@@ -1,0 +1,11 @@
+/*
+ * ufdbGuard is copyrighted (C) 2005-2016 by URLfilterDB with all rights reserved.
+ *
+ * Parts of the ufdbGuard daemon are based on squidGuard.
+ * This module is NOT based on squidGuard.
+ */
+
+#define UFDB_PATCHLEVEL	"-0"
+
+#define VERSION "@PACKAGE_VERSION@" 
+

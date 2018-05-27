@@ -1,0 +1,767 @@
+# ufdbGuard.conf - default configuration file for use with URLfilterDB
+#
+# The Reference Manual has detailed information about the configuration
+# of ufdbGuard.  It is highly recommended to read it before using ufdbGuard.
+#
+# Make sure that you edit the 4 lines that are marked with
+# 'EDIT THE NEXT LINE...' to adapt this file to your environment.
+
+logdir "@ufdb_logdir@"
+dbhome "@ufdb_dbhome@"
+
+## EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+# administrator "<a href=mailto:support@mydomain.com> the support desk </a>"
+
+# port 3977
+# interface "all"	# only used for TCP sockets
+
+# write which URLs are blocked into the logfile:
+logblock off
+# valid options are "off" and "on"
+
+# write which URLs are passed into the logfile:
+logpass off
+# valid options are "off" and "on"
+
+# write all URLs into the logfile:
+logall off
+# valid options are "off" and "on"
+
+# The redirector interface of Squid has been changed since Squid 3.4
+# and hence it is required to set the Squid version so that ufdbguardd
+# communicates with Squid using the version-dependent protocol.
+# valid version numbers are: 2.6, 2.7, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5 and 4.0
+# Contact the helpdesk of URLfilterDB for newer versions of Squid.
+## EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+squid-version "3.3"
+
+# When Squid uses ssl-bump in peek+bump mode, squid-uses-active-bumping
+# must be on.
+## EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+squid-uses-active-bumping off
+
+# When a URL database is reloaded/updated, it is not possible to 
+# perform URL lookups.  The next parameters defines what to respond
+# to URL lookups during a database load (this typically takes 30 seconds);
+# url-lookup-result-during-database-reload allow   - always send 
+#   status "URL allowed" back to Squid (default)
+# url-lookup-result-during-database-reload deny    - always send 
+#   status "URL denied" back to Squid
+url-lookup-result-during-database-reload allow
+# and the same for when a fatal error occurs:
+url-lookup-result-when-fatal-error allow
+
+# when url-lookup-result-during-database-reload and/or 
+# url-lookup-result-when-fatal-error is set to "deny", the browsers
+# are redirected and display an appropriate message.
+# To overrule these message, one can use the following two parameters:
+# redirect-fatal-error      "http://www.example.com/fatalerror.html"
+# redirect-loading-database "http://www.example.com/loadingdb.html"
+
+# Analyse URLs for categorisation and future inclusion in the URL database:
+# It is highly recommended to have this option "on". See the Reference Manual
+# for details.
+# analyse-uncategorised-urls on
+
+# Log parameters of URLs to users.
+# default: off
+# ufdb-log-url-details off
+
+# Show parameters of URLs to users.
+# default: off
+# ufdb-show-url-details off
+
+## EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+check-proxy-tunnels off
+# valid options for check-proxy-tunnels are
+# off             no checks are performed
+# queue-checks    checks are performed in the background
+# aggressive      checks are performed immediately
+# log-only        checks are performed in the background but tunnels are not blocked
+
+# if adult sites must be blocked, then also the adult search results 
+# of search engines must be blocked.
+# NOTE: see the Reference Manual on how to set SafeSearch on a per-ACL basis.
+safe-search on
+
+# Use the reverse hostname for URLs with an IP that has no known category?
+lookup-reverse-ip off
+
+# also use IPv6 for WAN?
+use-ipv6-on-wan on
+
+# Automatically upload crash reports ?
+upload-crash-reports on
+
+# See the Reference Manual or YouTube help on how to request a edufilter ID.
+youtube-edufilter    off
+youtube-edufilter-id "ABCD1234567890abcdef"
+
+# rotate the logfile when it reaches this size (200 MB default):
+max-logfile-size  200000000
+
+# supported platforms: Linux 2.6 
+# See the Reference Manual for optimisation of the CPU caches.
+############### cpus 2,3
+
+# When "execuserlist" is used, refreshuserlist defines the interval in minutes
+# for ufdbguardd to run the scripts defined by execuserlist.
+# default:
+# refreshuserlist 15
+
+# When "execdomainlist" is used, refreshdomainlist defines the interval in minutes
+# for ufdbguardd to run the scripts defined by execdomainlist.
+# default:
+# refreshdomainlist 15
+
+# Use this if you want a local lightweight http server for the redirect messages.
+### EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+# http-server { port = 8080, interface = all, images = @ufdb_images_dir@ }
+
+# For monitoring purposes:
+# external-status-command "/usr/bin/send-message-to-monitor-agent"
+
+# For sending emails to an administator or group
+# mail-server "mail.example.com"
+# admin-email "administrator@example.com"
+# my-hostname "foo.example.com"
+
+
+# define the network that contain computer systems that need URL filtering
+source allSystems {
+   ### EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+   ipv4  10.0.0.0/8  
+   # ipv4 192.168.0.0/16
+   # ipv6 2001:db8::/32
+}
+
+### EDIT THE NEXT LINES FOR LOCAL CONFIGURATION of positive exceptions :
+### .../blacklists/alwaysallow/domains should contain domain names to be allowed
+### uncomment the next 5 lines to use 'alwaysallow'.
+# category alwaysallow {
+#    domainlist        "alwaysallow/domains"
+#    # expressionlist  "alwaysallow/expressions"
+#    redirect          http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u
+#}
+
+### EDIT THE NEXT LINES FOR LOCAL CONFIGURATION of negative exceptions :
+### .../blacklists/alwaysdeny/domains should contain domain names to be blocked
+### uncomment the next 5 lines to use 'alwaysdeny'.
+# category alwaysdeny {
+#    domainlist        "alwaysdeny/domains"
+#    # expressionlist  "alwaysdeny/expressions"
+#    redirect          "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the security category
+category security {
+   # domainlist      "security/domains"
+   # expressionlist  "security/expressions"
+   cacerts         "security/cacerts"
+   option          enforce-https-with-hostname off
+   option          enforce-https-official-certificate on
+   option          https-prohibit-insecure-sslv2 on
+   option          https-prohibit-insecure-sslv3 off   
+   option 	   allow-aim-over-https on
+   option 	   allow-gtalk-over-https on
+   option 	   allow-skype-over-https on
+   option 	   allow-yahoomsg-over-https on
+   option 	   allow-fb-chat-over-https on
+   option 	   allow-citrixonline-over-https on
+   option 	   allow-unknown-protocol-over-https on
+   redirect        "302:http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+
+# define the safe category
+# DO NOT use "ufdbsafe": it is obsolete and will be removed from the URL database
+category safe {
+   domainlist      "safe/domains"
+   expressionlist  "safe/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# Google Safe Browsing URL lookup is part of category Safe.
+# To distinguish Google Safe Browsing it is a subcategory of Safe.
+# category google-safebrowsing {
+#    domainlist      "safe/safebrowsing/domains"
+#    expressionlist  "safe/safebrowsing/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Microsoft Smartscreen URL lookup is part of category Safe.
+# To distinguish Microsoft Smartscreen it is a subcategory of Safe.
+# category microsoft-smartscreen {
+#    domainlist      "safe/miscosoft-smartscreen/domains"
+#    expressionlist  "safe/miscosoft-smartscreen/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Opera Sitecheck URL lookup is part of category Safe.
+# To distinguish Opera Sitecheck it is a subcategory of Safe.
+# category opera-sitecheck {
+#    domainlist      "safe/opera-sitecheck/domains"
+#    expressionlist  "safe/opera-sitecheck/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the adult/sex category
+category adult {
+   domainlist      "adult/domains"
+   expressionlist  "adult/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the arms category
+category arms {
+   domainlist      "arms/domains"
+   expressionlist  "arms/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the audio/video category
+category audiovideo {
+   domainlist      "audio-video/domains"
+   expressionlist  "audio-video/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# Microsoft collects vast amounts of user and system data from workstations, browsers and apps
+# define the Microsoft Data Collection category
+category ms-data-collection {
+   option block-bumped-connect on
+   domainlist      "ms-data-collection/domains"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the advertisement category
+category ads {
+   domainlist      "ads/domains"
+   expressionlist  "ads/expressions"
+                   # ads can be blocked with mode=transparent|simple-red|noads|cross|square
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&mode=transparent&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the chat category
+category chat {
+   domainlist      "chat/domains"
+   expressionlist  "chat/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# The category chat-aim is used to ALLOW AOL Messenger, also known as AIM.  See the Reference Manual for details.
+# category chat-aim {
+#    domainlist      "chat/aim/domains"
+#    expressionlist  "chat/aim/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# The category chat-facebook is used to ALLOW Facebook chat.  See the Reference Manual for details.
+# category chat-facebook {
+#    domainlist      "chat/facebook/domains"
+#    expressionlist  "chat/facebook/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# The category chat-google is used to ALLOW Google Talk.  See the Reference Manual for details.
+# category chat-google {
+#    domainlist      "chat/google/domains"
+#    expressionlist  "chat/google/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# The category chat-skype is used to ALLOW Skype.  See the Reference Manual for details.
+# category chat-skype {
+#    domainlist      "chat/skype/domains"
+#    expressionlist  "chat/skype/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# The category chat-telegram is used to ALLOW Telegram.  See the Reference Manual for details.
+# category chat-telegram {
+#    domainlist      "chat/telegram/domains"
+#    expressionlist  "chat/telegram/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# The category chat-whatsapp is used to ALLOW whatsapp.  See the Reference Manual for details.
+# category chat-whatsapp {
+#    domainlist      "chat/whatsapp/domains"
+#    expressionlist  "chat/whatsapp/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# The category chat-yahoo is used to ALLOW Yahoo Instant Messenger.  See the Reference Manual for details.
+# category chat-yahoo {
+#    domainlist      "chat/yahoo/domains"
+#    expressionlist  "chat/yahoo/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# The category chat-allowed is used to ALLOW access to various URLs which are used by chat 
+# and other services.  See the Reference Manual for details.
+category chat-allowed {
+   domainlist      "chat/allowed/domains"
+   expressionlist  "chat/allowed/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the dating category
+category dating {
+   domainlist      "dating/domains"
+   expressionlist  "dating/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the drugs category
+category drugs {
+   domainlist      "drugs/domains"
+   expressionlist  "drugs/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the dynaddress (dynamic DNS) category
+category dynaddress {
+   domainlist      "dynaddress/domains"
+   expressionlist  "dynaddress/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the religion category
+category religion {
+   domainlist      "religion/domains"
+   expressionlist  "religion/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the youtube category
+# category youtube {
+#    domainlist      "youtube/domains"
+#    expressionlist  "youtube/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the vimeo category
+# category vimeo {
+#    domainlist      "vimeo/domains"
+#    expressionlist  "vimeo/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the webtv category
+category webtv {
+   domainlist      "webtv/domains"
+   expressionlist  "webtv/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the webradio category
+category webradio {
+   domainlist      "webradio/domains"
+   expressionlist  "webradio/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the entertainment category
+category entertain {
+   domainlist      "entertain/domains"
+   expressionlist  "entertain/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the CitrixOnline category
+# category citrixonline {
+#    domainlist      "extappl/citrixonline/domains"
+#    expressionlist  "extappl/citrixonline/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the iCloud category
+# category icloud {
+#    domainlist      "extappl/icloud/domains"
+#    expressionlist  "extappl/icloud/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the dropbox category
+# category dropbox {
+#    domainlist      "extappl/dropbox/domains"
+#    expressionlist  "extappl/dropbox/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the external-application category
+category extappl {
+   domainlist      "extappl/domains"
+   expressionlist  "extappl/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the finance category
+category finance {
+   domainlist      "finance/domains"
+   expressionlist  "finance/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the forum category
+category forum {
+   domainlist      "forum/domains"
+   expressionlist  "forum/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the gambling category
+category gambling {
+   domainlist      "gambling/domains"
+   expressionlist  "gambling/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the games category
+category games {
+   domainlist      "games/domains"
+   expressionlist  "games/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the illegal category
+category illegal {
+   domainlist      "illegal/domains"
+   expressionlist  "illegal/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the jobs category
+category jobs {
+   domainlist      "jobs/domains"
+   expressionlist  "jobs/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the news category
+category news {
+   domainlist      "news/domains"
+   expressionlist  "news/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the private category
+category private {
+   domainlist      "private/domains"
+   expressionlist  "private/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the p2p category
+category p2p {
+   domainlist      "p2p/domains"
+   expressionlist  "p2p/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the proxy category
+category proxies {
+   domainlist      "proxies/domains"
+   expressionlist  "proxies/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# Google Cache is a proxy.
+# To distinguish Google Cache it is a separate subcategory of proxies.
+# category google-cache {
+#    domainlist      "proxies/google-cache/domains"
+#    expressionlist  "proxies/google-cache/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Anydesk is a proxy.
+# To distinguish Anydesk it is a separate subcategory of proxies.
+# category anydesk {
+#    domainlist      "proxies/anydesk/domains"
+#    expressionlist  "proxies/anydesk/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Apus Browser is a proxy.
+# To distinguish Apus Browser it is a separate subcategory of proxies.
+# category apus-browser {
+#    domainlist      "proxies/apus/domains"
+#    expressionlist  "proxies/apus/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Googlezip Browser is a proxy.
+# To distinguish Googlezip Browser it is a separate subcategory of proxies.
+# category googlezip-browser {
+#    domainlist      "proxies/googlezip/domains"
+#    expressionlist  "proxies/googlezip/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Opera Mini Browser is a proxy.
+# To distinguish Opera Mini Browser it is a separate subcategory of proxies.
+# category opera-browser {
+#    domainlist      "proxies/opera/domains"
+#    expressionlist  "proxies/opera/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Puffin Browser is a proxy.
+# To distinguish Puffin Browser it is a separate subcategory of proxies.
+# category puffin-browser {
+#    domainlist      "proxies/puffin/domains"
+#    expressionlist  "proxies/puffin/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Silk Browser is a proxy.
+# To distinguish Silk Browser it is a separate subcategory of proxies.
+# category silk-browser {
+#    domainlist      "proxies/silk/domains"
+#    expressionlist  "proxies/silk/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# UCweb Browser is a proxy.
+# To distinguish UCweb Browser it is a separate subcategory of proxies.
+# category ucweb-browser {
+#    domainlist      "proxies/ucweb/domains"
+#    expressionlist  "proxies/ucweb/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# Translators that translate entire web pages are proxies.
+# To distinguish translators it is a separate subcategory of proxies.
+# category translators {
+#    domainlist      "proxies/translators/domains"
+#    expressionlist  "proxies/translators/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# TeamViewer and VPNs are part of the proxies category.
+# To distinguish Teamviewer it is a separate subcategory of proxies.
+# category teamviewer {
+#    domainlist      "proxies/teamviewer/domains"
+#    expressionlist  "proxies/teamviewer/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the searchengine category
+category searchengine {
+   ## EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+   option          safe-search on
+   domainlist      "searchengine/domains"
+   expressionlist  "searchengine/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the shops category
+category shops {
+   domainlist      "shops/domains"
+   expressionlist  "shops/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the Social Networks category
+category socialnet {
+   domainlist      "socialnet/domains"
+   expressionlist  "socialnet/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the socialnet-badges category
+# "badges" are the buttons, like requests and picture-boards of social networks.
+# If badges are blocked, network traffic is reduced and users are less tracked/monitored.
+# Note that Squid ssl-bump peek+bump mode is necessary since almost all URLs in this category
+# use HTTPS and can only be identified in peek+bump mode.
+# category socialnet-badges {
+#    domainlist      "socialnet/badges/domains"
+#    expressionlist  "socialnet/badges/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the socialnet-badoo category
+# category socialnet-badoo {
+#    domainlist      "socialnet/badoo/domains"
+#    expressionlist  "socialnet/badoo/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the socialnet-facebook category
+# category socialnet-facebook {
+#    domainlist      "socialnet/facebook/domains"
+#    expressionlist  "socialnet/facebook/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the googleplus category
+# category socialnet-googleplus {
+#    domainlist      "socialnet/googleplus/domains"
+#    expressionlist  "socialnet/googleplus/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the meebo category
+# category socialnet-meebo {
+#    domainlist      "socialnet/meebo/domains"
+#    expressionlist  "socialnet/meebo/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the myspace category
+# category socialnet-myspace {
+#    domainlist      "socialnet/myspace/domains"
+#    expressionlist  "socialnet/myspace/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the twitter category
+# category socialnet-twitter {
+#    domainlist      "socialnet/twitter/domains"
+#    expressionlist  "socialnet/twitter/expressions"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the sports category
+category sports {
+   domainlist      "sports/domains"
+   expressionlist  "sports/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the toolbars category
+category toolbars {
+   domainlist      "toolbars/domains"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the travel category
+category travel {
+   domainlist      "travel/domains"
+   expressionlist  "travel/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the phishtank category
+# category phishtank {
+#    domainlist      "phishtank/domains"
+#    redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+# }
+
+# define the malware category
+category malware {
+   domainlist      "malware/domains"
+   expressionlist  "malware/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the warez/hacking category
+category warez {
+   domainlist      "warez/domains"
+   expressionlist  "warez/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the violence category
+category violence {
+   domainlist      "violence/domains"
+   expressionlist  "violence/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the webmail category
+category webmail {
+   domainlist      "webmail/domains"
+   expressionlist  "webmail/expressions"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the checked category
+category checked {
+   domainlist      "checked/domains"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+# define the error category
+category "error" {
+   domainlist      "error/domains"
+   redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+}
+
+
+# define web content access rights
+acl {
+   allSystems  {
+      ### EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+      pass 
+	   # always-allow
+	   # !always-block
+	   # !ms-data-collection
+	   safe
+           !adult 
+	   !p2p !proxies !malware !warez
+	   !gambling !violence !drugs !illegal
+      	   !security 
+           arms
+	   dynaddress
+	   extappl
+	   chat dating games religion entertain finance jobs shops sports travel news
+	   webmail forum private 
+	   toolbars 
+           webtv webradio audiovideo
+	   ads
+           searchengine
+	   # with "logall on" or "logpass on" it makes sense to have the category "checked" in the ACL.
+	   checked
+	   any
+	   # NOTE: ALL categories are part of the ACL for logging purposes.
+	   # Only when logall is off, one can remove the allowed categories from the ACL.
+   }
+
+   ### the next acl is a mandatory fallback for all other cases.
+   ### do NOT remove this ACL.
+   default {
+      ### NOTE: depending on the other ACLs, "pass none" may be more appropriate to use
+      ### EDIT THE NEXT LINE FOR LOCAL CONFIGURATION:
+      pass 
+	   # !ms-data-collection
+	   safe
+           !adult 
+	   !p2p !proxies !malware !warez 
+	   !gambling !violence !drugs !illegal
+	   extappl dynaddress
+      	   !security 
+           arms
+	   dating games jobs travel webmail
+	   religion entertain shops sports
+	   chat finance news
+	   forum private 
+	   toolbars 
+           webtv webradio audiovideo
+	   ads
+           searchengine
+	   checked
+	   any
+
+      # Below is a suggested order for blocking categories.
+      # The Reference Manual has more information about the order for
+      # chat applications.
+      # pass   alwaysallow !alwaysblock
+      #        safe
+      #        chat-whatsapp chat-allowed		# whatsapp allowed 
+      #        !security 
+      #        !chat				# all other chat applications blocked
+      #        !p2p !proxies !adult !malware !warez !violence !drugs
+      #        !toolbars !dating !religion !entertain !gambling !games !illegal 
+      #        !arms !jobs !shops !sports !travel !finance !forum !news !webmail !private
+      #        !socialnet !extappl 
+      #        !ads 
+      #        any
+
+      # pass none
+
+      redirect        "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?admin=%A&color=orange&size=normal&clientaddr=%a&clientname=%n&clientuser=%i&clientgroup=%s&category=%t&url=%u"
+   }
+}
+

@@ -1,0 +1,139 @@
+#!@PERL@ -w
+#
+# ufdb_analyse_urls.pl  -  analyse URLs from ufdbguardd.log
+#
+# WARNING: analysis of URLs is slow since large log files are processed.
+#          It may take 50 seconds to process 400 MB on a common server.
+#
+# $Id: ufdb_analyse_urls.pl.in,v 1.2 2016/10/12 18:34:57 root Exp root $
+
+use Getopt::Long;
+
+my $dummy;
+my $debug = 0;
+my $need_help;
+my $logfilename;
+
+my $min_count = 2;
+
+my $n_blocked = 0;
+my $n_passed = 0;
+
+my $process_passed = 1;
+my $process_blocked = 0;
+
+my @urls = ();
+
+
+sub urlmatch ($)
+{
+   my $thisurl = shift;
+
+   for $shorturl (@urls)
+   {
+      return 1 if index( $thisurl, $shorturl ) == 0;
+   }
+   return 0;
+}
+
+
+sub parse_logfile ($)
+{
+   my $fn = shift;
+   my $ldate;
+   my $ltime;
+   my $laction;
+   my $luser;
+   my $lcategory;
+   my $lurl;
+
+   print "logfile $fn\n"  if ($debug);
+
+   open IN, "< $fn"  or die "cannot open file \"$fn\": $!";
+   while (<IN>)
+   {
+      chomp;
+      @terms = split;
+      $laction = $terms[3];
+      if (defined($laction))
+      {
+	 if (($laction eq 'PASS'  && $process_passed)  ||
+	     ($laction eq 'BLOCK' && $process_blocked))
+	 {
+	    $lurl = $terms[8];
+	    $lurl =~ s,^http://,,;
+	    $lurl =~ s,[&\?].*,....,;
+	    if (urlmatch($lurl))
+	    {
+	       $n_blocked++  if $laction eq 'BLOCK';
+	       $n_passed++   if $laction eq 'PASS';
+	       $ldate = $terms[0];
+	       $ltime = $terms[1];
+	       $luser = $terms[4];
+	       $luser = 'anonymous'  if ($luser eq '-');
+	       $lcategory = $terms[7];
+	       printf "%s %s  %-14s  %-14s  %-5s  %s\n", $ldate, $ltime, $luser, $lcategory, $laction, $lurl;
+	    }
+	 }
+      }
+   }
+   close IN;
+}
+
+
+sub print_analysis ()
+{
+   my $nlines;
+
+   printf "------------------------------------------------------------------------------\n";
+   printf "%d URLs: %d blocked, %d passed.\n", $n_blocked+$n_passed, $n_blocked, $n_passed;
+   if ($process_passed && $process_blocked)
+   {
+      printf "The list is based on blocked and passed URLs.\n";
+   }
+   elsif ($process_passed) 
+   {
+      printf "The list is based on only passed URLs.\n";
+   }
+   elsif ($process_blocked) 
+   {
+      printf "The list is based on only blocked URLs.\n";
+   }
+}
+
+
+$dummy = GetOptions(
+		'help|?'           => \$need_help,
+		"debug"            => \$debug,
+		"url=s"            => \@urls,
+		"include-passed!"  => \$process_passed,
+		"include-blocked!" => \$process_blocked );
+# allow both comma-separated list of URLs and multiple occurences of -url option
+@urls = split(/,/,join(',',@urls));
+
+if ($process_passed == 0  &&  $process_blocked == 0)
+{
+   print "error: no-include-passed and no-include-blocked options imply that not one URL will be analysed.\n";
+   exit 2;
+}
+
+if ($need_help  ||  !defined( $ARGV[0] ))
+{
+   print "usage: ufdb_analyse_urls.pl -url <URL> [-[no-]include-passed] [-[no-]include-blocked] [-report-size=N] [-debug] <logfiles>\n";
+   print "defaults: include-passed, no-include-blocked, report-size=20\n";
+   exit 1;
+}
+
+if ($#urls == -1)
+{
+   print "error: must use at least one -url option.\n";
+   exit 2;
+}
+
+foreach $logfilename (@ARGV)
+{
+   parse_logfile $logfilename;
+}
+print_analysis;
+
+exit 0;

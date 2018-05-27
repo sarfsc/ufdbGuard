@@ -1,0 +1,410 @@
+#!/bin/sh
+#
+# install_etcfiles.sh[.in]
+#
+# $Id: install_etcfiles.sh.in,v 1.7 2017/02/27 13:27:15 root Exp root $
+
+if [ -d /usr/xpg4/bin ]
+then
+   # to get a standard 'grep' on Solaris:
+   PATH=/usr/xpg4/bin:$PATH
+   export PATH
+fi
+
+unset BASH_ENV
+
+OS=unix
+
+# the installer must be root to install files under /etc and we check for this
+# but the exception is rpmbuild.  When a package is made using rpmbuild,
+# it is comon practise to _NOT_ run the install as root.
+ID=`id -un`
+PKGNAME=${RPM_PACKAGE_NAME:-notset}
+if [ $PKGNAME = ufdbGuard ]
+then
+   DESTDIR=${RPM_BUILD_ROOT:-}
+fi
+
+if [ "$ID" != root  -a  $PKGNAME != ufdbGuard ]
+then
+   echo
+   echo "***  You must be root but you appear to be $ID. ***"
+   echo "The ufdb startup script cannot be installed..."
+   echo
+   exit 1
+fi
+
+CFGDIR="$1"
+if [ ! -d "$CFGDIR" ]
+then
+   echo "install_etcfiles.sh: $CFGDIR is not a directory   **********"
+   exit 1
+fi
+
+BINDIR="$2"
+if [ ! -d "$BINDIR" ]
+then
+   echo "install_etcfiles.sh: $BINDIR is not a directory   **********"
+   exit 1
+fi
+
+SYSCFGFILE="$3"
+if [ ! -f "$SYSCFGFILE" ]
+then
+   echo "install_etcfiles.sh: $SYSCFGFILE does not yet exist (OK)"
+fi
+
+# TODO: reorganise the decision making on where to install scripts and which tools to use.
+# TODO: this should go to configure and use an configuration option
+MYOS=`uname -s`
+if [ -d /var/smoothwall ]				  # Smoothwall
+then
+   OS=smoothwall
+   INITDIR=/var/smoothwall/mods/ufdbguard/bin
+   RCROOT=/no-rcroot
+elif [ "$MYOS" = SunOS  -a  -d /lib/svc/share ]           # Solaris 10, 11
+then
+   OS=solaris_smf
+   INITDIR=/lib/svc/method
+   RCROOT=/no-rcroot
+elif [ "$MYOS" = Linux  -a  -d not-yet-implemented-/usr/lib/systemd/system ]
+then
+   OS=linux_systemd
+   RCROOT=$DESTDIR/usr/lib/systemd/system
+   INITDIR=$DESTDIR/etc/init.d
+elif [ -d $DESTDIR/usr/local/etc/rc.d ]         	# FreeBSD
+then
+   OS=freebsd
+   INITDIR=$DESTDIR/usr/local/etc/rc.d
+else
+   if [ -d $DESTDIR/etc/init.d  -a  -x $DESTDIR/usr/lib/lsb/install_initd ]		# Linux with LSB
+   then
+      INITDIR=$DESTDIR/etc/init.d
+      RCROOT=$INITDIR
+   else
+      if [ -d $DESTDIR/etc/rc.d/init.d ]		# Linux 2.6
+      then 
+	 INITDIR=$DESTDIR/etc/rc.d/init.d
+	 if [ -d $DESTDIR/etc/rc.d/rc3.d ]
+	 then
+	    RCROOT=$DESTDIR/etc/rc.d
+	 else
+	    RCROOT=$INITDIR
+	 fi
+      else
+	 if [ -d $DESTDIR/etc/init.d ]			# Linux 2.4
+	 then 
+	    INITDIR=$DESTDIR/etc/init.d
+	    if [ -d $DESTDIR/etc/rc.d/rc3.d ]
+	    then
+	       RCROOT=$DESTDIR/etc/rc.d
+	    else
+	       RCROOT=$INITDIR 				# Linux 2.4
+	    fi
+	 else
+	    if [ -f $DESTDIR/etc/rc.securelevel ]		# OpenBSD
+	    then
+	       OS=openbsd
+	       RCROOT=$BINDIR
+	    else
+	       echo
+	       echo "============================================================================="
+	       echo "Cannot find the system rc init.d directory   *******"
+	       echo "Please run install_etcfiles.sh manually and specify the directory   ********"
+	       echo "============================================================================="
+	       echo
+	       exit 1
+	    fi
+	 fi
+      fi
+   fi
+fi
+
+
+copyparams () {
+   # copy parameters from ufdbUpdate to /etc/sysconfig/ufdbguard
+   cfgfile="@ufdb_bindir@/ufdbUpdate"
+   syscfgfile="$1"
+   if [ -r "$cfgfile" ]
+   then
+      P_DOWNLOAD_USER=`grep -E -e '^DOWNLOAD_USER=' $cfgfile`
+      P_DOWNLOAD_PASSWORD=`grep -E -e '^DOWNLOAD_PASSWORD=' $cfgfile`
+      P_PROXY_USER=`grep -E -e '^PROXY_USER=' $cfgfile`
+      P_PROXY_PASSWORD=`grep -E -e '^PROXY_PASSWORD=' $cfgfile`
+      eval $P_DOWNLOAD_USER
+      usernamelen=`echo $DOWNLOAD_USER | wc -c`
+      if [ $usernamelen -ge 3 ]
+      then
+	 sed -e "s,^DOWNLOAD_USER=\"\".*,$P_DOWNLOAD_USER"  \
+	     -e "s,^DOWNLOAD_PASSWORD=\"\".*,$P_DOWNLOAD_PASSWORD"  \
+	     -e "s,^PROXY_USER=\"\".*,$P_PROXY_USER"  \
+	     -e "s,^PROXY_PASSWORD=\"\".*,$P_PROXY_PASSWORD"  \
+	     < $syscfgfile > $syscfgfile.new
+	 mv $syscfgfile.new $syscfgfile
+	 echo "copied DOWNLOAD_USER, DOWNLOAD_PASSWORD, PROXY_USER and PROXY_PASSWORD from $cfgfile to $syscfgfile"
+      fi
+   fi
+}
+
+
+install_openbsd () {
+   # OpenBSD is different from other *nix systems.
+   # On OpenBSD the stop/start script is installed in $BINDIR
+   # and called from /etc/rc.local and /etc/rc.shutdown
+
+   rm -f $BINDIR/ufdb.sh
+   cp mtserver/ufdb.sh $BINDIR/ufdb.sh
+   chmod 755 $BINDIR/ufdb.sh
+
+   ALREADY_DONE=`grep -E -e "/ufdb.sh.*start" $DESTDIR/etc/rc.local`
+   if [ "$ALREADY_DONE" = "" ]
+   then
+      (
+         echo 
+	 echo "# start ufdbGuard"
+	 echo "$BINDIR/ufdb.sh start"
+	 echo
+      ) >> $DESTDIR/etc/rc.local
+      (
+         echo 
+	 echo "# stop ufdbGuard"
+	 echo "$BINDIR/ufdb.sh stop"
+	 echo
+      ) >> $DESTDIR/etc/rc.shutdown
+
+      echo
+      echo "======================================================================="
+      echo "/etc/rc.local and /etc/rc.shutdown are modified to start/stop ufdbGuard"
+      echo "======================================================================="
+      echo
+   else
+      echo
+      echo "Notice: /etc/rc.local and /etc/rc.shutdown already start/stop ufdbGuard"
+      echo
+   fi
+}
+
+
+install_netbsd () {
+
+   if [ ! -w $INITDIR ]
+   then
+      echo "No permission to write to $INITDIR"
+      exit 1
+   fi
+
+   rm -f $INITDIR/ufdb.sh
+   cp mtserver/ufdb.sh $INITDIR/ufdb.sh
+   chmod 755 $INITDIR/ufdb.sh
+
+   echo
+   echo "=================================================================="
+   echo "ufdb.sh startup script is copied to $INITDIR "
+   echo "=================================================================="
+   echo
+}
+
+
+install_smoothwall () {
+
+   if [ ! -d $INITDIR ]
+   then
+      mkdir -p $INITDIR
+   fi
+
+   if [ ! -w $INITDIR ]
+   then
+      echo "install_etcfiles.sh: No permission to write to $INITDIR   ***"
+      exit 1
+   fi
+
+   rm -f $INITDIR/ufdb
+   cp mtserver/ufdb.sh $INITDIR/ufdb
+   chmod 755 $INITDIR/ufdb
+
+   echo
+   echo "=================================================================="
+   echo "ufdb.sh startup script is copied to $INITDIR "
+   echo "=================================================================="
+   echo
+}
+
+
+install_freebsd () {
+
+   if [ ! -w $INITDIR ]
+   then
+      echo "install_etcfiles.sh: No permission to write to $INITDIR   ***"
+      exit 1
+   fi
+
+   rm -f $INITDIR/ufdb.sh
+   cp mtserver/ufdb.sh $INITDIR/ufdb.sh
+   chmod 755 $INITDIR/ufdb.sh
+
+   echo
+   echo "=================================================================="
+   echo "ufdb.sh startup script is copied to $INITDIR "
+   echo "=================================================================="
+   echo
+}
+
+
+install_solaris_smf () {
+
+   # installation based on SMF
+   METHODDIR=/lib/svc/method
+   if [ ! -d $METHODDIR ]
+   then
+      echo "$METHODDIR does not exist.  Cannot install SMF files"
+      exit 1
+   fi
+
+   if [ -f $METHODDIR/init.ufdbguard ]
+   then
+      echo "$METHODDIR/init.ufdbguard will be installed but already exists.  init.ufdbguard is saved as init.ufdbguard.previous  *****"
+      cp $METHODDIR/init.ufdbguard $METHODDIR/init.ufdbguard.previous
+      chmod 555 $METHODDIR/init.ufdbguard.previous
+   fi
+
+   ./ufdbguard_smf_inst.sh
+   echo
+
+}
+
+
+install_unix () {
+
+   if [ ! -w $INITDIR ]
+   then
+      echo "No permission to write to $INITDIR"
+      exit 1
+   fi
+
+   rm -f $INITDIR/ufdb
+   cp mtserver/ufdb.sh $INITDIR/ufdb
+   chmod 755 $INITDIR/ufdb
+
+   # when a package is built with rpmbuild, we may not use chkconfig nor 
+   if [ $PKGNAME != ufdbGuard ]
+   then
+
+      # Use LSB if the system has it.
+      if [ -x /usr/lib/lsb/install_initd ]
+      then
+	 echo "using LSB to manage the system initialisation script"
+	 /usr/lib/lsb/remove_initd ufdb
+	 /usr/lib/lsb/install_initd ufdb
+      else
+	 # use chkconfig if the system has it
+	 if [ -x /sbin/chkconfig ]
+	 then
+	    echo "using chkconfig to manage the system initialisation script"
+	    chkconfig ufdb resetpriorities
+	    chkconfig ufdb reset
+	 else
+            if [ -x /usr/sbin/update-rc.d ]
+            then
+               echo "using update-rc.d to manage the system initialisation script"
+               /usr/sbin/update-rc.d ufdb remove
+               /usr/sbin/update-rc.d ufdb defaults
+            else
+               echo "LSB, chkconfig and update-rc.d were not detected, so symbolic links to $INITDIR/ufdb are created"
+
+	       # some old installers made a /etc/rc3.d/S40ufdb which was not a softlink, remove the old beasties
+	       rm -f $RCROOT/rc3.d/S40ufdb
+	       rm -f $RCROOT/rc5.d/S40ufdb
+	       rm -f $RCROOT/rc[2345].d/K02ufdb
+	       rm -f $RCROOT/rc[2345].d/K15ufdb
+	       rm -f $RCROOT/rc[2345].d/S50ufdb
+
+	       if [ ! -f $RCROOT/rc0.d/K26ufdb ]		# rc0
+	       then
+		  ln -s $INITDIR/ufdb $RCROOT/rc0.d/K26ufdb
+	       fi
+
+	       if [ ! -f $RCROOT/rc3.d/K26ufdb ]		# rc3
+	       then
+		  ln -s $INITDIR/ufdb $RCROOT/rc3.d/K26ufdb
+	       fi
+	       if [ ! -f $RCROOT/rc3.d/S89ufdb ]
+	       then
+		  ln -s $INITDIR/ufdb $RCROOT/rc3.d/S89ufdb
+	       fi
+
+	       if [ ! -f $RCROOT/rc5.d/K26ufdb ]		# rc5
+	       then
+		  ln -s $INITDIR/ufdb $RCROOT/rc5.d/K26ufdb
+	       fi
+	       if [ ! -f $RCROOT/rc5.d/S89ufdb ]
+	       then
+		  ln -s $INITDIR/ufdb $RCROOT/rc5.d/S89ufdb
+	       fi
+
+	       if [ ! -f $RCROOT/rc6.d/K26ufdb ]		# rc6
+	       then
+		  ln -s $INITDIR/ufdb $RCROOT/rc6.d/K26ufdb
+	       fi
+            fi
+	 fi
+      fi
+   fi
+
+   echo
+   echo "=================================================================="
+   echo "ufdb startup script is copied to $INITDIR/ufdb"
+   echo "=================================================================="
+   echo
+}
+
+
+linux_systemd () {
+   # not yet implemented
+   install_unix
+}
+
+
+fix_piddir_permissions () {
+   if [ -d "$DESTDIR/@ufdb_piddir@" ]
+   then
+      chmod 755 "$DESTDIR/@ufdb_piddir@"
+   fi
+}
+
+
+case $OS in
+   freebsd)       install_freebsd ;;
+   openbsd)       install_openbsd ;;
+   linux_systemd) install_linux_systemd ;;
+   smoothwall)    install_smoothwall ;;
+   solaris_smf)   install_solaris_smf ;;
+   *) 		  install_unix ;;
+esac
+
+
+if [ -f "$SYSCFGFILE" ]
+then
+   cp mtserver/sysconfig.ufdbguard $SYSCFGFILE.latest
+   echo "$SYSCFGFILE exists.  A new version is in $SYSCFGFILE.latest"
+   copyparams $SYSCFGFILE.latest
+else
+   cp mtserver/sysconfig.ufdbguard $SYSCFGFILE
+   echo "System configuration settings file is $SYSCFGFILE"
+   copyparams $SYSCFGFILE
+fi
+# TODO: copy parameters from ufdbUpdate to $SYSCFGFILE ************************************************************ 
+
+fix_piddir_permissions
+
+# the addition of the ufdbguardd service to /etc/services is deiabled since
+# ufdbguardd uses by default a named socket.
+# SERVICE=`grep -E -e ufdbguardd $DESTDIR/etc/services`
+# if [ "$SERVICE" = "" ]
+# then
+#    (
+#       echo ""
+#       echo "# for URLfilterDB daemon : "
+#       echo "ufdbguardd      3977/tcp"
+#    ) >> $DESTDIR/etc/services
+# fi
+

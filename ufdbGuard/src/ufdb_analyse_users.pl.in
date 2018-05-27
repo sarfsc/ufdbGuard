@@ -1,0 +1,136 @@
+#!@PERL@ -w
+#
+# ufdb_analyse_users.pl  -  analyse users from ufdbguardd.log
+#
+# WARNING: analysis of users is slow since large log files are processed.
+#          It may take 50 seconds to process 400 MB on a common server.
+#
+# $Id: ufdb_analyse_users.pl.in,v 1.2 2016/10/12 18:34:57 root Exp root $
+
+use Getopt::Long;
+
+my $dummy;
+my $debug = 0;
+my $need_help;
+my $logfilename;
+
+my $min_count = 2;
+my $report_size = 20;
+
+my $n_blocked = 0;
+my $n_passed = 0;
+
+my $process_passed = 1;
+my $process_blocked = 0;
+
+my @users = ();
+my %userhash;
+
+
+sub parse_logfile ($)
+{
+   my $fn = shift;
+   my $ldate;
+   my $ltime;
+   my $laction;
+   my $luser;
+   my $lcategory;
+   my $lurl;
+
+   print "logfile $fn\n"  if ($debug);
+
+   open IN, "< $fn"  or die "cannot open file \"$fn\": $!";
+   while (<IN>)
+   {
+      chomp;
+      @terms = split;
+      $laction = $terms[3];
+      if (defined($laction))
+      {
+	 if (($laction eq 'PASS'  && $process_passed)  ||
+	     ($laction eq 'BLOCK' && $process_blocked))
+	 {
+	    $luser = $terms[4];
+	    $luser = 'anonymous'  if ($luser eq '-');
+	    if ($userhash{$luser})
+	    {
+	       $n_blocked++  if $laction eq 'BLOCK';
+	       $n_passed++   if $laction eq 'PASS';
+	       $ldate = $terms[0];
+	       $ltime = $terms[1];
+	       $lcategory = $terms[7];
+	       $lurl = $terms[8];
+	       $lurl =~ s,^http://,,;
+	       $lurl =~ s,[&\?].*,....,;
+	       printf "%s %s  %-14s  %-14s  %-5s  %s\n", $ldate, $ltime, $luser, $lcategory, $laction, $lurl;
+	    }
+	 }
+      }
+   }
+   close IN;
+}
+
+
+sub print_analysis ()
+{
+   my $nlines;
+
+   printf "------------------------------------------------------------------------------\n";
+   printf "%d URLs: %d blocked, %d passed.\n", $n_blocked+$n_passed, $n_blocked, $n_passed;
+   if ($process_passed && $process_blocked)
+   {
+      printf "The list is based on blocked and passed URLs.\n";
+   }
+   elsif ($process_passed) 
+   {
+      printf "The list is based on only passed URLs.\n";
+   }
+   elsif ($process_blocked) 
+   {
+      printf "The list is based on only blocked URLs.\n";
+   }
+}
+
+
+$dummy = GetOptions(
+		'help|?'         => \$need_help,
+		"debug"          => \$debug,
+		"user=s"         => \@users,
+		"report-size=i"  => \$report_size,
+		"count-passed!"  => \$process_passed,
+		"count-blocked!" => \$process_blocked );
+# allow both comma-separated list of users and multiple occurences of -user option
+@users = split(/,/,join(',',@users));
+
+if ($process_passed == 0  &&  $process_blocked == 0)
+{
+   print "error: no-count-passed and no-count-blocked options imply that not one URL will be counted.\n";
+   exit 2;
+}
+
+if ($need_help  ||  !defined( $ARGV[0] ))
+{
+   print "usage: ufdb_analyse_users.pl -user <userid> [-[no-]count-passed] [-[no-]count-blocked] [-report-size=N] [-debug] <logfiles>\n";
+   print "defaults: count-passed, no-count-blocked, report-size=20\n";
+   exit 1;
+}
+
+if ($#users == -1)
+{
+   print "error: must use at least one -user option.\n";
+   exit 2;
+}
+
+# put all users in a hash for fast lookup.
+foreach $u (@users)
+{
+   $userhash{$u} = 1;
+}
+
+foreach $logfilename (@ARGV)
+{
+   parse_logfile $logfilename;
+}
+print_analysis;
+
+exit 0;

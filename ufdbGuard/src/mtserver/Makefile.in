@@ -1,0 +1,1049 @@
+# PTHREAD_LIB=  -lpthread          # use -lc_r on FreeBSD 4.x
+# SOLARIS_LIBS= -lsocket -lnsl -lrt -L /opt/csw/lib
+# SSL_LIBS=     -lssl -lcrypto
+# LINK_FLAGS=   # $(SOLARIS_LIBS)	 # remove the first '#' on Solaris systems
+
+# CFLAGS_OPT= -O2 -minline-all-stringops # -static 
+# CFLAGS_OPT= -DUFDB_FREE_MEMORY -g -O -Wall # -O2 # -Wall
+# CFLAGS_OPT= -O2 # -march=pentium3
+# CFLAGS= -I.. -Wall -ansi $(CFLAGS_OPT)
+# CC= gcc 
+
+# LANG=C
+
+CC      = @CC@ 
+CFLAGS  = @CFLAGS@ -I. -I..
+CPPFLAGS= @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS    = @LIBS@  
+DEFS    = @DEFS@
+SOLARIS_LIBS = @SOLARIS_LIBS@
+LINK    = $(CC) $(CFLAGS) $(LDFLAGS) -o $@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+NICE    = nice -n 15
+
+
+# for debugging:
+# CFLAGS  = -O0 -DUFDB_FREE_MEMORY -g -Wall -I/usr/include -I. -I..
+
+OBJS= 
+MYLIB= libufdbd.a
+MYLIBSSL= libufdbssl.a
+HEADERS= ../ufdb.h ../sg.h
+
+PORT=8888
+PIDFILE=/var/tmp/ufdbgrd-test.pid
+TESTARGS= -p $(PORT) -L $(PIDFILE)
+
+
+all: ufdbguardd ufdbgclient ufdbsignal ufdb-pstack
+
+ufdbguardd: ufdbguardd.o $(OBJS) $(MYLIB) $(MYLIBSSL)
+	$(LINK) ufdbguardd.o $(OBJS) -L. -lufdbd -lufdbssl $(LIBS) $(SOLARIS_LIBS)
+
+ufdbguardd.o: ufdbguardd.c $(HEADERS)
+	$(CC) $(CFLAGS) -c ufdbguardd.c
+
+ufdbgclient.o: ufdbgclient.c $(HEADERS)
+	$(CC) $(CFLAGS) -c  ./ufdbgclient.c
+
+ufdbsignal.o: ufdbsignal.c $(HEADERS)
+	$(CC) $(CFLAGS) -c ufdbsignal.c
+
+ufdbgclient: ufdbgclient.o ../ufdbglobals.o ../sgLog.o ../ufdblib.o ../ufdbbase.o ../ufdbLookup.o
+	$(LINK) ufdbgclient.o ../ufdbglobals.o ../sgLog.o ../ufdblib.o ../ufdbbase.o ../ufdbLookup.o  -lpthread $(SOLARIS_LIBS)
+
+ufdbsignal: ufdbsignal.o ../ufdbglobals.o ../sgLog.o ../ufdblib.o ../ufdbbase.o ../ufdbLookup.o 
+	$(LINK) ufdbsignal.o ../ufdbglobals.o ../sgLog.o ../ufdblib.o ../ufdbbase.o ../ufdbLookup.o  $(SOLARIS_LIBS)
+
+../lex.yy.o:
+	cd .. ;  $(MAKE) lex.yy.o
+
+../y.tab.o:
+	cd .. ;  $(MAKE) y.tab.o
+
+$(MYLIB): ../crypt.o ../lex.yy.o ../sgDiv.o ../sgLog.o ../ufdbLogConfig.o ../ufdbLookup.o \
+          ../ufdblib.o ../ufdbdb.o ../ufdbUserlist.o ../y.tab.o ../ufdbbase.o ../engine.o \
+	  ../ufdbglobals.o ../ufdbHostnames.o
+	-@rm -f $(MYLIB)
+	ar rc $(MYLIB) ../crypt.o ../lex.yy.o ../sgDiv.o ../sgLog.o ../ufdbLogConfig.o ../ufdbLookup.o \
+	               ../ufdblib.o ../ufdbdb.o ../ufdbUserlist.o ../y.tab.o ../ufdbbase.o ../engine.o \
+		       ../ufdbglobals.o ../ufdbHostnames.o
+
+ptmalloc3/libptmalloc3.a:
+	cd ptmalloc3 ;  $(MAKE) linux-pthread
+
+$(MYLIBSSL): ../ufdbchkport.o ../httpsQueue.o ../ufdbHashtable.o
+	-@rm -f $(MYLIBSSL)
+	ar rc $(MYLIBSSL) ../ufdbchkport.o ../httpsQueue.o ../ufdbHashtable.o
+
+ctags:
+	ctags *.[ch] ../*.[yl] ../*.[ch]
+
+t: ufdbguardd ../../test/blacklist/domains.ufdb ../d0.ufdb ../d1.ufdb ../d2.ufdb ufdbguardd.log
+	touch ufdbguardd.log
+	chown squid ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -dd -U squid $(TESTARGS)  -c ./ufdbGuardV.conf
+	chown ufdb /local/ufdbguard133/logs/ufdbguardd.log
+
+t132: ufdbguardd
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -dd -U squid -c ufdbGuard-ttt.conf
+
+t132a: ufdbguardd
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -dd -U squid -c ufdbGuard-ttta.conf
+
+t132b: ufdbguardd
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -dd -U squid -c ufdbGuard-tttb.conf
+
+td2: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -U squid $(TESTARGS)  -c ./ufdbGuardV2.conf
+
+ta: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 ufdbguardd  -U squid $(TESTARGS)  -c ./ufdbGuard-aaa.conf
+
+to: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 ufdbguardd  -U squid $(TESTARGS)  -c ./ufdbGuardVNL.conf
+
+te: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -R -U squid $(TESTARGS)  -c ./ufdbGuardFULL.conf
+
+tfull: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd     -U squid $(TESTARGS)  -c ./ufdbGuardFULL.conf
+
+td: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -D -d -U squid $(TESTARGS) -c ./ufdbGuardV.conf
+
+tc: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -c ./ufdbGuardV.conf -C verify
+
+tm: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -T $(TESTARGS) -c ./ufdbGuardV.conf
+
+teul: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -U squid $(TESTARGS)  -c ./ufdbGuardEUL.conf
+
+tfail01: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -U squid $(TESTARGS)  -c ./fail01.conf
+
+tfail02: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -U squid $(TESTARGS)  -d -c ./fail02.conf
+
+tfail03: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -U squid $(TESTARGS)  -d -c ./fail03.conf
+
+tfail04: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ./ufdbguardd  -U squid $(TESTARGS)  -d -c ./fail04.conf
+
+tfail05: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	su ufdb5 -c "./ufdbguardd $(TESTARGS)  -d -c ufdbGuardV.conf"
+
+tfail06: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ufdbguardd  -U squid $(TESTARGS)  -d -c ./fail06.conf
+
+tfail07: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ufdbguardd  -U squid $(TESTARGS)  -d -c ./fail07.conf
+
+tfail08: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ufdbguardd  -U squid $(TESTARGS)  -d -c ./fail08.conf
+
+tfail09: ufdbguardd ufdbguardd.log
+	$(NICE) ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ufdbguardd  -U squid $(TESTARGS)  -d -c ./fail09.conf -w 90
+
+tfail10: ufdbguardd ufdbguardd.log
+	$(NICE) ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	$(NICE) ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	$(NICE) ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ufdbguardd  $(TESTARGS)  -d -c ./fail10.conf -w 90
+
+tfail06vg: ufdbguardd ufdbguardd.log
+	# $(NICE) ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	# MALLOC_CHECK_=3 ufdbguardd  $(TESTARGS)  -d -c ./fail10.conf -w 90
+	MALLOC_ARENA_MAX=12 \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --gen-suppressions=all  --num-callers=15  \
+		    --track-fds=yes   --tool=memcheck      --log-file=vt.log   \
+		    ufdbguardd $(TESTARGS) -D -c ./fail06.conf -w 90
+
+t132vg: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --gen-suppressions=all  --num-callers=15  \
+		    --track-fds=yes   --tool=memcheck      --log-file=vt.log   \
+		    ./ufdbguardd  -D -d -c ./ufdbGuard-aaa.conf -w 90
+
+
+td132vg2: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --gen-suppressions=all  --num-callers=15  \
+		    --vgdb=no  --track-fds=no   --tool=memcheck      --log-file=vt.log   \
+		    ./ufdbguardd  -D -d -c ./ufdbGuardV2.conf
+
+
+tfail10vg: ufdbguardd ufdbguardd.log
+	$(NICE) ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	# MALLOC_CHECK_=3 ufdbguardd  $(TESTARGS)  -d -c ./fail10.conf -w 90
+	MALLOC_ARENA_MAX=12 \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --gen-suppressions=all  --num-callers=15  \
+		    --track-fds=yes   --tool=memcheck      --log-file=vt.log   \
+		    ufdbguardd $(TESTARGS) -D -c ./fail10.conf -w 90
+
+tfail11: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ufdbguardd  $(TESTARGS)  -d -c ./fail11.conf -w 90
+	sleep 3
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 10.1.1.1 administrateur
+
+ttime: ufdbguardd ../../test/blacklist/domains.ufdb ufdbguardd.log
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK_=3 ufdbguardd  $(TESTARGS)  -c ./time.conf
+
+ttime2:
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 10.1.1.1 -
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 10.1.1.1 jan
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 10.1.1.1 kees
+
+vgd0: ../ufdbGenTable
+	MALLOC_ARENA_MAX=12 \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --gen-suppressions=all  --num-callers=15  \
+		    --track-fds=yes   --tool=memcheck      --log-file=vgd0.log   \
+		    ../ufdbGenTable -q -n -W -d ../d0 -u ../u0 -t d0
+
+../d0.ufdb: ../d0 ../u0
+	cd .. ; ./ufdbGenTable -q -n -W -d d0 -u u0 -t d0
+
+../d1.ufdb: ../d1 ../u1
+	cd .. ; ./ufdbGenTable -q -n -W -d d1 -u u1 -t d1
+
+../d2.ufdb: ../d2 ../u2
+	cd .. ; ./ufdbGenTable -q -n -W -d d2 -u u2 -t d2
+
+../../test/blacklist/domains.ufdb: ../../test/blacklist/domains
+	cd ../../test ;  $(MAKE) blacklist/domains.ufdb
+
+LEAKOPTS= --leak-check=full --show-reachable=yes --fair-sched=try
+# LEAKOPTS=
+
+vt: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --suppressions=./valgrsupp  \
+		    --undef-value-errors=no  --num-callers=25  \
+		    --track-fds=yes   --tool=memcheck      --log-file=vt.log   \
+		    ufdbguardd $(TESTARGS) -d -D -c ./ufdbGuardV.conf
+
+vtg: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 \
+	UFDB_FREE_MEMORY_ON_EXIT=1  \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --gen-suppressions=all  --num-callers=25  \
+		    --fair-sched=yes  --read-var-info=yes  --leak-check=full  \
+		    --show-leak-kinds=definite,indirect,possible  --track-origins=yes  \
+	    	    --freelist-vol=200000000  \
+		    --track-fds=yes   --tool=memcheck      --log-file=vt.log   \
+		    ufdbguardd $(TESTARGS) -D -c ./ufdbGuardV.conf
+
+vtl: largeexpr
+	MALLOC_ARENA_MAX=12 \
+	valgrind    $(LEAKOPTS) --partial-loads-ok=no  --verbose  \
+		    --gen-suppressions=all  --num-callers=25  \
+		    --fair-sched=yes  --read-var-info=yes  --leak-check=full  \
+		    --show-leak-kinds=definite,indirect,possible  --track-origins=yes  \
+	    	    --freelist-vol=200000000  \
+		    --track-fds=yes   --tool=memcheck      --log-file=re.log   \
+		    ./largeexpr
+
+vtp132: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 \
+	UFDB_FREE_MEMORY_ON_EXIT=1  \
+	valgrind    --fair-sched=try --leak-check=full --show-reachable=yes --partial-loads-ok=yes  \
+		    --suppressions=./valgrsupp  \
+	            --verbose  --num-callers=50 --track-fds=yes \
+		    --freelist-vol=100000000 \
+		    --max-stackframe=250000 \
+		    --track-origins=yes  --read-var-info=yes \
+		    --tool=memcheck  --log-file=vt.log  \
+		    ./ufdbguardd $(TESTARGS) -D -c /local/ufdbguard132/etc/ufdbGuard.conf
+
+vtp: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 \
+	UFDB_FREE_MEMORY_ON_EXIT=1  \
+	valgrind    --fair-sched=try --leak-check=full --show-reachable=yes --partial-loads-ok=yes  \
+		    --suppressions=./valgrsupp  \
+	            --verbose  --num-callers=50 --track-fds=yes \
+		    --freelist-vol=100000000 \
+		    --max-stackframe=264000 \
+		    --track-origins=yes  --read-var-info=yes \
+		    --tool=memcheck  --log-file=vt.log  \
+		    ufdbguardd $(TESTARGS) -D -c ./ufdbGuardFULL.conf    # ./ufdbGuardV.conf   # /local/squid/etc/ufdbGuard2.conf
+
+vprod: ufdbguardd
+	MALLOC_ARENA_MAX=12 \
+	UFDB_FREE_MEMORY_ON_EXIT=1  \
+	valgrind    --fair-sched=try --leak-check=full --show-reachable=yes --verbose  \
+		    --suppressions=./valgrsupp \
+		    --num-callers=50  \
+		    --track-fds=yes   --tool=memcheck      --log-file=vt.log   \
+		    --freelist-vol=100000000 --max-stackframe=264000 \
+		    --track-origins=yes  --read-var-info=yes  \
+		    ./ufdbguardd -U ufdb -c /local/ufdbguard132/etc/ufdbGuard.conf 
+
+sleep:
+	sleep 1
+
+sleep2:
+	sleep 2
+
+reconfig reload:
+	./ufdbgclient -p $(PORT) -l . -d -Z www.reloadtest.com  10.1.1.11 	-  > ./ufdbgclient.reload1.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z www.reloadtest.com  10.1.1.11 	-  > ./ufdbgclient.reload2.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z www.reloadtest.com  10.1.1.11 	-  > ./ufdbgclient.reload3.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z www.reloadtest.com  10.1.1.11 	-  > ./ufdbgclient.reload4.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z www.reloadtest.com  10.1.1.11 	-  > ./ufdbgclient.reload5.log 2>&1 &
+	-@sleep 1
+	-@if test -e $(PIDFILE) ; then kill -HUP  `cat $(PIDFILE)` ;  echo "signal HUP sent" ; else echo "$(PIDFILE) does NOT EXIST"; fi
+	-@if test -e /tmp/ufdbguardd-08888 ; then echo "/tmp/ufdbguardd-08888 exists (OK)"; fi
+	-@if test -e $(PIDFILE) ; then echo "$(PIDFILE) exists (OK)"; fi
+	-@sleep 1
+	-@if test -e /tmp/ufdbguardd-08888 ; then echo "/tmp/ufdbguardd-08888 exists (OK)"; fi
+	-@if test -e $(PIDFILE) ; then echo "$(PIDFILE) exists (OK)"; fi
+
+freload:
+	-@if test -e $(PIDFILE) ; then kill -HUP  `cat $(PIDFILE)` ;  echo "signal HUP sent" ; else echo "$(PIDFILE) does NOT EXIST"; fi
+	-@if test -e /tmp/ufdbguardd-08888 ; then echo "/tmp/ufdbguardd-08888 exists (OK)"; fi
+         
+kill:
+	-@if test -e $(PIDFILE) ; then kill -TERM `cat $(PIDFILE)` ; echo "signal TERM sent" ; else echo "$(PIDFILE) does NOT EXIST"; fi
+	@sleep 6
+	-@if test -e /tmp/ufdbguardd-08888 ; then echo "/tmp/ufdbguardd-08888 STILL EXISTS"; fi
+	-@ps -ef | grep ufdbguardd.*8888 | grep -v grep
+
+abort:
+	-@if test -e $(PIDFILE) ; then kill -ABRT `cat $(PIDFILE)` ; echo "signal ABRT sent" ; else echo "$(PIDFILE) does NOT EXIST"; fi
+
+ttt:
+	./ufdbgclient -p $(PORT) -l . -d -Z ksn-url-geo.kaspersky-labs.com:443  10.1.1.11 	-  > ./ufdbgclient.ttt.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z ksn-url-geo.kaspersky-labs.com:443  10.1.1.11 	-  > ./ufdbgclient.ttt.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z ksn-url-geo.kaspersky-labs.com:443  10.1.1.11 	-  > ./ufdbgclient.ttt.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z ksn-url-geo.kaspersky-labs.com:443  10.1.1.11 	-  > ./ufdbgclient.ttt.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z ksn-url-geo.kaspersky-labs.com:443  10.1.1.11 	-  > ./ufdbgclient.ttt.log 2>&1 &
+	./ufdbgclient -p $(PORT) -l . -d -Z ksn-url-geo.kaspersky-labs.com:443  10.1.1.11 	-  > ./ufdbgclient.ttt.log 2>&1 &
+
+usr1:
+	kill -USR1 `cat $(PIDFILE)`
+
+v: ufdbguardd ufdbguardd.log
+	MALLOC_ARENA_MAX=12 \
+	ufdbguardd $(TESTARGS) -D -d -c ./ufdbGuardV.conf
+
+ty: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d 64.12.24.7:443  10.1.1.11 	-
+	./ufdbgclient -p $(PORT) -l . -d 98.139.60.237:443  10.1.1.11 	-
+
+t0: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d http://www.sex.com 10.1.00.11 	CCA%5calexvv
+	./ufdbgclient -p $(PORT) -l . -d 'http://www.mercadolibre.com.ar/RealMedia/ads/click_lx.ads/ML_BRAS'  10.1.00.11 	-
+	./ufdbgclient -p $(PORT) -l . -d 'http://www.mercadolibre.com.ar/org-img/advertising/marisa/novembro/super_cameba.swf?clickTag=http://oas.adservingml.com/RealMedia/ads/click_lx.ads/ML_BRAS'  10.1.00.11 	-
+	@echo
+
+
+t1: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d http://www.proxy.org 11.1.1.11 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://www.sex.com 11.1.1.11 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://www.myhomepage.com 11.1.1.11 user5
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.goedkopen.nl/ 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://www.notblocked.com/a%02b%00c%0dd%aae%51f" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://www.notblocked.com/a%09b%00c%0dd%0ae%01f" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://www.notblocked.com/a&#09;b&#0;c&#0D;d&#00009;&#aa;e&#01;f&#;g&#ff;h&#333;i&#55a" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://066.00.20.1 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://066.129.00020.000 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://1.009.2.000/abc 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://1.009.2.000:8080/abc 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://[a::bbb:1]:8080/abc 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://[::1]:443/abc 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://[::1]:8080/abc 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://[ab:ffff::127.0.0.1]:8080/abc 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://[ab:ffff::127.0.0.1]:8080/abc 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://www.youtube.com 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://www.youtube.com/picture.gif 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://www.youtube.com/somechannel/foo.bar 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "tests.url-filter-db.com/watch?v=Abcd&url=http%3A%2F%2Ffoo.com/bar" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "https://www.xs4all.nl/" 10.1.1.44 -
+	@echo
+
+td2c: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d "http://www.xhamster.com" 10.0.0.1 -
+	./ufdbgclient -p $(PORT) -l . -d "http://www.xhamster.com" 10.0.0.2 -
+	./ufdbgclient -p $(PORT) -l . -d "http://www.xhamster.com" 10.0.0.3 -
+
+t22: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d "https://www.firebox.com" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://64.233.169.104/search?q=cache:OK6uOgz2pp0J:www.xs4all.nl/+xs4all&hl=en" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://proxy.org" 1.1.1.1 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://foobar.org" 1.1.1.1 -
+	@echo
+
+crash: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d "debug.urlfilterdb.com/debug-thread-crash" 10.1.1.44 debug
+
+t9: ufdbgclient
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "foo.net/cgi?t=23" 10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "foo.net/cgi?f=11&t=40633&view=next"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "foo.net/cgi?f=11&t=4273&start=100"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "twv00.biz/showthread.php?119-Foo-2013"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "twv00.biz/showthread.php?158-Bar-157"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "twv00.biz/showthread.php?158-Bar-157=foo"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "twv00.biz/showthread.php?a=1&158-Bar-157"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "forum.ostrov.net.ua/showthread.php?t=1230" 10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "relay.ostrov.net.ua/showthread.php?t=1230"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "bar.biz/cgi?b=3&a=2"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "bar.biz/cgi?b=3&c=99&a=2"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "t1.nl/cgi?p=date&parnoval&ss=44"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "t1.nl/cgi?p=date&a0=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd&b0=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee&c0=ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd&d0=wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww&e0=eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee&f0=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&g0=1111111111111111111111111111111111111111111111111111111111111111111111111111111111&parnoval&ss=77"   10.1.1.1/hostname -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "hi.foo.bar/index.php?option=com_content&view=article&id=48663:----l-r&catid-78:kuryezi&ltemid=167"   10.1.1.1/hostname -
+	@echo
+
+t10: ufdbgclient
+	./test_t10 $(PORT) > t10.log
+
+tlong: ufdbgclient
+	./test_longurl $(PORT)
+
+t2: ufdbgclient
+	echo "6 webmail.xs4all.nl:443 10.1.1.45/- naughtyuser GET foo=bar key=value v=1.0" | ./ufdbgclient -p $(PORT) -l .
+	echo "7 www.sex.com:443 10.1.1.45/- naughtyuser GET proxy=squid4" | ./ufdbgclient -p $(PORT) -l .
+	echo "8 www.sex.com/foo.html 10.1.1.45/- naughtyuser GET proxy=squid4" | ./ufdbgclient -p $(PORT) -l .
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.thisdomainnameshouldnotexist.com:444" 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d "www.thisdomainnameshouldnotexist.com:444" 10.1.1.44 administrateur
+	./ufdbgclient -p $(PORT) -l . -d "domdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdomdom" 10.1.1.44 administrateur
+	./ufdbgclient -p $(PORT) -l . -d "www.thisdomainnameshouldnotexist.com/pathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpath" 10.1.1.44 administrateur
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "62.128.100.39:443" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "0.0.2.33" 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d "0.0.2.33" 10.1.1.44 administrateur
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.httpsipblock.com:443" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "10.9.0.6:443" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://[0:0::1]/ipv6/localhost.html" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://64.233.169.104/search?q=cache:OK6uOgz2pp0J:www.xs4all.nl/+xs4all&hl=en" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://5.9.169.104/din.aspx?foo=bar&client=dyngate&abx=xyz" 10.1.1.45 naughtyuser
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "10.1.1.33:443/foo/bar?aap=1&noot=1&mies=1" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d watson.telemetry.microsoft.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 13.66.56.243:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 13.66.56.244:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d windowsupdate.microsoft.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.oracle.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d dnslytics.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.facebook.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d ksn-url-geo.kaspersky-labs.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://alice.sni.velox.ch/ 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 'mysite44.ch:443/nph-proxy.php?u=dsfjhksjdhf&id=a%20b&d=aaa/./bbb//ccc/ddd/../eee' 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d http://www.nonexistent.nl:8080/CP1 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://webmail.xs4all.nl 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.urlfilterdb.com:22/ 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.urlfilterdb.com 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://srv002.urlfilterdb.com/ 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://srv002.urlfilterdb.com:9443/ 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://srv002.urlfilterdb.com:1194/ 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.xs4all.nl 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sex.com:8080  10.3.3.2 user5
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sex.com:8080  10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l .    www.sex.com  10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.sex.com  10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.nonexistent.com:8080/CP1  10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.britneyspears.ac  10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44/- -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44/foo.example.com user1
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44/foo.example.com -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44/foo.example.com user2
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44/foo.example.com user3
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44/foo.example.com -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44 user4
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.sexandpoker.com  202.12.33.44 user5
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.888.com  10.2.3.4 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.888.com  10.2.3.4 administrator
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.myvideos.com/v?video=adultcontent  10.2.3.4 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 'http://www.youtube.com/watch?v=--7yaqdkoao&foo=bar'  10.2.3.4 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 'c.ypcdn.com/2/c/rtd%3Frid%'  10.2.3.4 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 'c.ypcdn.com/2/c/rtd%3Frid%3D3c011e38-95fe-499b-bc2c-6b54e22ba523%26ptid%3Dpxhzyt461s%26vrid%3D913252860362227756%26%26lsrc%3DIY%26iid%3D1e1580a2-8c55-4a6f-be72-c285cb5ee636&tl=1933&x_app_ct=1358574753553'  10.2.3.4 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d srv001.fin.888.com  10.2.3.4/srv001.fin.urlfilterdb.com  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d srv001.fin.888.com  10.2.3.5/fin.urlfilterdb.com  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.cnn.com  10.2.3.6/pc11.fin.urlfilterdb.com  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 89.0x34.8.9  10.2.3.5/-  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 89.34.006.9/slash  10.2.3.5/-  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 89.34.009.9/slash  10.2.3.5/-  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 0xa9.34.8.9/hexobfusc  10.2.3.5/-  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "0xA9.34.8.9;semicolon"  10.2.3.5/-  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 0xa9g.34.8.9?foo=bar  10.2.3.5/-  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "0xa9.34.8.9.abc.com"  10.2.3.5/-  johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.example.com"  10.2.3.5/-  john.with-a-long-middle-name.doe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.example.com"  10.2.3.5/-  'john.with-a-long-middle-name.doe\oursquiddomain'
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.example.com"  10.2.3.5/-  'john.with-a-long-middle-name.doe\\oursquiddomain2'
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.example.com"  10.2.3.5/-  'john.with-a-long-middle-name.doe@oursquiddomain3'
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d '122.3.4.5:443'  10.2.3.4/fin.urlfilterdb.com root
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 0x42.0xe2.0x48.0x78 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "jobbörse.com" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "example.com" 10.0.0.0 abe_linc
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "example.com" 10.254.254.244 john_doe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "example.com" 190.255.255.255 fred_flin
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "example.com/foobar00" 10.1.1.1 user5
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "example.com/foobar001" 10.1.1.1 user5
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "example.com/foobar0012" 10.1.1.1 user5
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "edition.cnn.com/showbiz" 1.1.1.2 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl/film" 1.1.1.2/pc02.foo.com -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl" 1.1.1.2/pc02.foo.com hparadise
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl" "2ea:4cf0:12:3::1034/ipv6-johnny" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://беларусь.icom.museum" "2ea:4cf0:12:3::1034/ipv6-johnny" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://беларусь.icom.museum" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://www.qpets.tv/video.php?sort=date&id=Cq62X4WO0BU&k=%D0%AD%D0%BB%D1%8C%D0%B4%D0%B0%D1%80+%D0%A5%D0%B0%D0%BC%D0%B7%D0%B8%D0%BD.+%D0%9A%D0%B0%D0%BC%D0%BF%D0%B0%D0%BD%D0%B8%D1%8F+%C2%AB%D0%92+%D0%BF%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%BA%D1%83+%D0%BC%D1%83%D1%81%D1%83%D0%BB%D1%8C%D0%BC%D0%B0%D0%BD+%D0%A2%D0%B0%D1%82%D0%B0%D1%80%D1%81%D1%82%D0%B0%D0%BD%D0%B0%C2%BB" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "56joycasino.com/ru?partner=p12813p55710p8edat2031" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "56joycasino.com/ru?partner=p12618p64816p7a93t3606&promo=obzor" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "56joycasino.com/ru?promo=obzoia&partner=p12618p64816p7a93t3606" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "56joycasino.com/ru?promo=obzora&partner=p12618p64816p7a93t3606" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "56joycasino.com/ru?promo=obzor&partner=p12618p64816p7a93t3606" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "ru2.go-2-site.com/go/ep8d?p49442p172553p3f18=" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "ru2.go-2-site.com/go/ep8d?p49442p172553p3f18" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "ru2.go-2-site.com/go/ep8d?p49442p172553p3f18=foo" "2600:abcd:1001:ab00:feed:14ee:ae1c:51ab/ipv6-fulano" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "ru2.go-2-site.com/go/ep8d?p49442p172553p3f18=foo" "::1.2.3.4/ipv6-ipv4" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d watson.telemetry.microsoft.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 13.66.56.243:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 13.66.56.244:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d windowsupdate.microsoft.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 157.56.77.153:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.oracle.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d dnslytics.com:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 104.27.178.200:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 104.27.179.200:443 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d '[2400:cb00:2048:1::681b:b3c8]:443' 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 192.168.0.111/foo.local admin
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 192.168.0.123/foo.local admin
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 2000:bbb:cccc:d::defe:d0/bar.local admin
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 2001:a60:a00d:1::defe:d0/foo.local admin
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "161.22.60.145:443" 2001:a60:a00d:1::defe:d0/foo.local johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "srv016vpn:443" 2001:a60:a00d:1::defe:d0/foo.local johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com:443" 2001:a60:a00d:1::defe:d0/foo.local johndoe
+	@echo
+
+t2c: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 10.1.2.4/foo.local johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.cnn.com" 10.1.2.4/foo.local johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.ea.com" 10.1.2.4/foo.local johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "192.168.1.1/index.html" 8.1.2.3/bar.local johndoe
+	@echo
+
+t44:
+	./ufdbgclient -p $(PORT) -l . -d "192.168.1.1/index.html" 192.168.100.100/bar.local johndoe
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "mysite.foo.bar/index.html" 192.168.100.100/bar.local johndoe
+	@echo
+
+t26:
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl" "2001:41d0:9:cbcb:2::9/ipv6-johnny" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl" "40F0:0822:33:4::2/ipv6-johnny" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl" "40F0:0822:33:4::2" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl" "40F0:821:1:1::1/ipv6-johnny" -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "telegraaf.nl" "eb::1/ipv6-johnny" -
+	@echo
+	
+tg:
+	./ufdbgclient -p $(PORT) -l . -d 'http://www.google.nl/search?q=copy++bluray+linux&hl=en'  10.2.3.4 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d 'http://www.google.nl/search?q=copy++bluray+linux&hl=en'  10.2.3.4 user5
+	@echo
+
+tpd: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d www.nonexistent.nl/abc/def/../index.html 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.nonexistent.nl/../index.html 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.nonexistent.nl/abc//def///..////index.html 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.nonexistent.nl/abc/../index.html 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.nonexistent.nl/abc/def/../  10.1.1.44 -
+	@echo
+
+t3: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d http://mail.uncat.xtyv 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://webmail.xs4all.nl 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.urlfilterdb.com 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://srv002.urlfilterdb.com:9443/ 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d www.xs4all.nl 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l .    www.sex.com  10.1.1.44 -
+	@echo
+	sleep 2
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://webmail.xs4all.nl 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.urlfilterdb.com 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://srv002.urlfilterdb.com:9443/ 10.1.1.44 -
+	@echo
+	sleep 2
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://webmail.xs4all.nl 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://www.urlfilterdb.com 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d https://srv002.urlfilterdb.com:9443/ 10.1.1.44 -
+	@echo
+
+t4:
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.800 > out.800.01 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.500 > out.500.01 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000 2>&1 &
+	sleep 1
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in2.500 > out.500.04 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.500 > out.500.02 2>&1 &
+	sleep 1
+	nohup ./ufdbgclient -m 4 -p $(PORT) -l . < https.in2.500 > out.500.05 2>&1 &
+	nohup ./ufdbgclient -m 8 -p $(PORT) -l . < https.in.500 > out.500.03 2>&1 &
+	sleep 1
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in2.500 > out.500.06 2>&1 &
+
+t4peek:
+	peektest.sh
+
+t4s:
+	nohup ./ufdbgclient -p $(PORT) -l . < in.same > out.same.01 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.same > out.same.02 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.same > out.same.03 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.same > out.same.04 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.same > out.same.05 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.same > out.same.06 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.same > out.same.07 2>&1 &
+
+t4p:
+	nohup ./ufdbgclient -p $(PORT) -l . < par.https.in.500 > out.500.01 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < par.https.in.500 > out.500.02 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < par.https.in.500 > out.500.03 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < par.https.in.500 > out.500.04 2>&1 &
+
+t5:
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.50000 > out.50000.01 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.50000 > out.50000.02 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.50000 > out.50000.03 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.50000 > out.50000.04 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.50000 > out.50000.05 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < https.in.50000 > out.50000.06 2>&1 &
+
+t6: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d "http://[::1]/ipv6/simple.html" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://[0:0::1]/ipv6/localhost.html" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://[0:0:0::1]:80/index.php3" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://[01:23:45:67:89:ab]" 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d "http://[01:23:45:67:89:ab]/index.html" 10.1.1.44 -
+	./ufdbgclient -p $(PORT) -l . -d "http://[01:23:45:67:89:ab]:99/index.html" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://[01:23::ab]:80/index.php" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://[2001:252:0:1::2008:8]/sport/index.html" 10.1.1.44 -
+	@echo
+
+t7: ufdbgclient
+	nohup ./ufdbgclient -p 3979 -l . < in.ttt > out.ttt.01 2>&1 &
+
+tp: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.01 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.02 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.03 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.04 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.05 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.06 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.11 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.12 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.13 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.14 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.15 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.500 > out.500.16 2>&1 &
+
+tphup: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.01 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.02 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.03 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.04 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.05 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.06 2>&1 &
+	kill -HUP  `cat $(PIDFILE)`
+
+tp50: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.0 2>&1 &
+
+tp2: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.0 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.1 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.2 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.3 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.4 2>&1 &
+	time  ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.5 2>&1 &
+	# nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.6 2>&1 &
+	# nohup ./ufdbgclient -p $(PORT) -l . < in.50000 > out.50000.7 2>&1 &
+
+
+tp1bl: ufdbgclient
+	time  ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.0 2>&1 
+
+tp2bl: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.0 2>&1 &
+	time  ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.1 2>&1
+
+tp3bl: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.0 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.1 2>&1 &
+	time  ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.2 2>&1
+
+tp4bl: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.0 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.1 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.2 2>&1 &
+	time  ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.3 2>&1
+
+tp8bl: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.0 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.1 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.2 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.3 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.4 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.5 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.6 2>&1 &
+	time  ./ufdbgclient -p $(PORT) -l . < in.50000bl > out.50000.7 2>&1 
+
+tsmb: ufdbgclient
+	nohup ./ufdbgclient -l . < in.50000bl > out.50000.0 2>&1 &
+	nohup ./ufdbgclient -l . < in.50000bl > out.50000.1 2>&1 &
+	time  ./ufdbgclient -l . < in.50000bl > out.50000.2 2>&1 &
+
+tp3: ufdbgclient
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+	nohup ./ufdbgclient -p $(PORT) -l . < in.50000bl > /dev/null 2>&1 &
+
+100k: ufdbgclient
+	time ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	time ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	time ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+	time ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1 &
+
+
+100k1: ufdbgclient
+	time ./ufdbgclient -p $(PORT) -l . < ../100000 > /dev/null 2>&1
+
+tim0: ufdbgclient
+	./ufdbgclient -p $(PORT) -l . -d "http://www.myspace.com" 10.1.1.44 user5
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://www.myspace.com" 10.1.1.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://www.myspace.com/profile/John%20Doe" 10.4.4.4 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "http://www.urlfilterdb.com" 10.4.4.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "https://123.4.5.6" 10.4.4.44 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "https://123.4.5.6" 10.5.5.5 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "https://123.4.5.6/" 130.5.6.7 -
+	@echo
+	
+tt:
+	 $(MAKE) tp3
+	sleep 3
+	kill -HUP `ps -ef | grep ufdbguardd | grep -v grep | head -1 | awk '{ print $$2 }'`
+
+killv:
+	kill -9 `ps -ef | grep valgrind | grep -v grep | head -1 | awk '{ print $$2 }'`
+
+ufdbguardd.log:
+	touch ufdbguardd.log
+	chown squid ufdbguardd.log
+
+clean:
+	rm -f  ufdbgclient  ufdbguardd  ufdbsignal ufdb-pstack *.o  libufdbd.a  libufdbssl.a
+	rm -f  out.5*  out.8*  ttt  gmon.out  *.log  *.log.[0-9] nohup.out
+	rm -f  vt.log.* ufdbguardd.log.*
+	rm -f  core core.* vt.log.core.*
+	rm -f  out.same* out.thttpd.* out.ttt.01 out.[0-9]*
+
+distclean: clean
+	rm -f  ufdbguardd.log ufdbguardd.log.?  ufdbgclient.log
+	rm -f  Makefile ufdb.sh t3.prof
+	rm -f  TAGS tags ctags
+
+subdir= src/mtserver
+
+Makefile: Makefile.in ../../config.status
+	cd ../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdb.sh: ufdb.sh.in ../../config.status
+	cd ../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdb-pstack: ufdb-pstack.in ../../config.status
+	cd ../.. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ins:: ufdbgclient ufdbguardd ufdbsignal
+	-/etc/init.d/squid      stop
+	@echo
+	-/etc/init.d/ufdb stop
+	@echo
+	@sleep 3
+	-rm -f @ufdb_bindir@/ufdbhttpd @ufdb_bindir@/ufdbgclient @ufdb_bindir@/ufdbguardd @ufdb_bindir@/ufdbsignal
+	-cp ../ufdbhttpd ufdbgclient ufdbguardd ufdbsignal @ufdb_bindir@
+	rm @ufdb_bindir@/ufdbsignal ; cp ufdbsignal @ufdb_bindir@ ; chown root @ufdb_bindir@/ufdbsignal ; chmod +s @ufdb_bindir@/ufdbsignal
+	@echo
+	/etc/init.d/ufdb start
+	@sleep 3
+	@echo
+	-/etc/init.d/squid      start
+
+ins35:: ../ufdbhttpd ufdbgclient ufdbguardd ufdbsignal ufdb-pstack
+	@echo
+	-systemctl stop ufdb-ufdbguard132
+	@echo
+	@sleep 3
+	-rm -f @ufdb_bindir@/ufdbhttpd @ufdb_bindir@/ufdbgclient @ufdb_bindir@/ufdbguardd @ufdb_bindir@/ufdbsignal @ufdb_bindir@/ufdb-pstack
+	-cp ../ufdbhttpd ufdbgclient ufdbguardd ufdbsignal ufdb-pstack @ufdb_bindir@
+	@chmod 755 @ufdb_bindir@/ufdb-pstack
+	rm @ufdb_bindir@/ufdbsignal ; cp ufdbsignal @ufdb_bindir@ ; chown root @ufdb_bindir@/ufdbsignal ; chmod +s @ufdb_bindir@/ufdbsignal
+	@echo
+	-systemctl start ufdb-ufdbguard132
+	@sleep 3
+	@echo
+	-systemctl reload ufdb-squid35
+
+gdb: ufdbguardd
+	# /etc/init.d/ufdb stop
+	# /etc/init.d/ufdb kill
+	-$(MAKE) kill
+	# sleep 1
+	# lsof -i | grep ufdb
+	@echo "                           run -D -c  /local/squid/etc/ufdbGuard.conf"
+	@echo "                           run -D -w 64 -c  /local/squid/etc/ufdbGuard.conf"
+	@echo "                           run $(TESTARGS) -D -c ./ufdbGuardV.conf"
+	@echo "                           run -U squid $(TESTARGS) -D -c ./ufdbGuardFULL.conf"
+	@echo "                           break __fortify_fail"
+	@echo "                           run -D -U ufdb -c /local/ufdbguard132/etc/ufdbGuard.conf"
+	@echo "                           run -D -U ufdb -c ufdbGuard-ttt.conf"
+	MALLOC_ARENA_MAX=12 MALLOC_CHECK=2 gdb ./ufdbguardd
+	# /etc/init.d/ufdb start
+
+g2:
+	http_proxy=http://srv002:3133 wget --proxy=on -O /tmp/temp http://www.cwi.nl
+g3:
+	http_proxy=http://srv002:3133 wget --proxy=on -O /tmp/temp http://www.ibm.nl
+g4:
+	http_proxy=http://srv002:3133 wget --proxy=on -O /tmp/temp http://www.sex.com
+g22:
+	http_proxy=http://srv002:3128 wget --proxy=on -O /tmp/temp http://www.cwi.nl
+g33:
+	http_proxy=http://srv002:3128 wget --proxy=on -O /tmp/temp http://www.ibm.nl
+g44:
+	http_proxy=http://srv002:3128 wget --proxy=on -O /tmp/temp http://www.sex.com
+
+w64: ufdbguardd
+	MALLOC_ARENA_MAX=12 ./ufdbguardd -p 8888 -w 64 -c /local/squid/etc/ufdbGuard.conf
+
+ct:    	ufdbguardd
+	$(MAKE) kill
+	sleep 1
+	if [ -r ufdbguardd.log ] ; then >ufdbguardd.log ; fi
+	$(MAKE) t
+	sleep 2
+	$(MAKE) t4
+
+
+g411:	
+	$(MAKE) clean
+	CC=/usr/local/gcc/4.1.1/bin/gcc $(MAKE) -e $(MAKEFLAGS) all
+
+thttpd: 
+	wget -q -O out.thttpd.01 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.02 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.03 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.04 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.05 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.06 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.07 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.08 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.09 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+	wget -q -O out.thttpd.10 "http://localhost:8081/cgi-bin/URLblocked.cgi?color=red&url=booh" &
+

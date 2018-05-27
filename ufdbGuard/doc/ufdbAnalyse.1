@@ -1,0 +1,52 @@
+.\" man page for ufdbAnalyse
+.TH UFDBANALYSE "1" "28/5/2018" "Release 1.33" "Release 1.33"
+.\"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+\fBufdbAnalyse\fR \- parse a Squid log file and show URL category percentages
+.SH "SYNOPSIS"
+.HP 9
+\fBufdbAnalyse\fR [\fIoptions\fR] \fB<logfiles>\fR
+.SH "DESCRIPTION"
+.PP
+\fBufdb_analyse_urls\fR is a log analysis utility which
+parses one or more log files of Squid, retrieves the URLs,
+and uploads the stripped URLs to the servers of URLfilterDB 
+where they are analysed.
+The analysis with the URL category report will be emailed to you.
+.PP
+The various options control which URLs are included in the output.
+.SH "OPTIONS"
+.TP
+\fB\-a\fR
+Flag to indicate that the log file format is "Apache".
+.TP
+\fB\-l <LOG>\fR
+specifies the Squid log file.
+Multiple files may be specified.
+.TP
+\fB\-d <FQDN>\fR
+specifies the fully qualified domainname of this site.
+URLs with this FQDN are put in the pseudo-category "own domain".
+.TP
+\fB\-e <EMAIL>\fR
+specifies the email address of the person that receives teh generated analysis report.
+.TP
+\fB\-n <FULL NAME>\fR
+specifies the full name of the person that runs the analysis request.
+.TP
+\fB\-v\fR
+be verbose.
+.SH "WARNINGS"
+.PP
+Analysis of urls is slow since (very) large log files are processed.
+It may take 50 seconds to process 400 MB on a common server.
+.SH "SEE ALSO"
+.PP
+ReferenceManual_1_33.pdf, 
+\fIhttp://www.urlfilterdb.com/en/downloads/documentation.html\fR.
+.SH "AUTHOR"
+The developers of URLfilterDB \- http://www.urlfilterdb.com

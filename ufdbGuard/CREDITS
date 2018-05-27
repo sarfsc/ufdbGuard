@@ -1,0 +1,16 @@
+
+The ufdbGuard Software Suite  http://www.urlfilterdb.com/products/ufdbguard.html
+---------------------------------------------------------------------------------
+
+In March 2005 ufdbGuard 1.0 was forked from squidGuard 1.2.  squidGuard is a 
+free GPL2-based URL redirector for Squid which was written by Pål Baltzersen 
+and Lars Erik Håland.
+
+Since 2005 the development of ufdbGuard was done by the Dutch company 
+URLfilterDB B.V.
+
+Many users of ufdbGuard requested features to be implemented and we are
+always grateful to receive feedback for new improvements.
+
+In February 2015 Yuri Voinov contributed SMF files for Solaris 10.
+

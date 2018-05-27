@@ -1,0 +1,33 @@
+
+make kill
+> ufdbguardd.log
+make t
+sleep 4 
+
+ (
+  echo '2 bar.com 10.2.2.2/- - GET' 
+  echo '3 foo.com 10.2.2.2/- - GET' 
+  echo '9 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  echo '7 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  sleep 2
+  echo '2 bar.com 10.2.2.2/- - GET' 
+  echo '7 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  echo '3 foo.com 10.2.2.2/- - GET' 
+  echo '4 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  echo '5 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  echo '6 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  echo '7 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  echo '8 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  echo '9 40.77.226.250:443 10.2.2.2/- - CONNECT' 
+  sleep 1
+  echo '9 178.255.153.10:443 10.2.2.2/- - CONNECT'      # teamviewer
+  sleep 1
+  echo '7 178.255.153.10/foo.cgi?user=john 10.2.2.2/- - GET'      # teamviewer
+  sleep 1
+  echo '0 152.163.56.2:443 10.2.2.2/- - CONNECT' 
+  sleep 1
+  echo '0 https://152.163.56.2/foo/bar.cgi?id=1 10.2.2.2/- - POST' 
+  sleep 1
+  echo '1 152.163.56.2/index.html 10.2.2.2/- - GET' 
+
+  ) | ./ufdbgclient -m 4 -p 8888 -dd -l .

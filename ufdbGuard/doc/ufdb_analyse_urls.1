@@ -1,0 +1,50 @@
+.\" man page for ufdb_analyse_urls
+.TH UFDB_ANALYSE_URLS "1" "28/5/2018" "Release 1.33" "Release 1.33"
+.\"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+\fBufdb_analyse_urls\fR \- retrieve a list of URLs from the log files
+.SH "SYNOPSIS"
+.HP 9
+\fBufdb_analyse_urls\fR [\fIoptions\fR] \fB<logfiles>\fR
+.SH "DESCRIPTION"
+.PP
+\fBufdb_analyse_urls\fR is a log analysis utility which
+scans one or more log files of ufdbguardd and prints
+matched URLs from the log files.
+.PP
+The various options control which URLs are included in the output.
+.SH "OPTIONS"
+.TP
+\fB\-url <URL>\fR
+Specify a URL to match.  
+The URL may be a partial URL.  
+For example
+.br
+   -url example.com/cgi-bin/
+.br
+matches the longer URL example.com/cgi-bin/ad.cgi
+This option may be used more than once.
+.TP
+\fB\-report-size <N>\fR
+specifies the number of lines of the report.
+The default is 20 lines.
+.TP
+\fB\-count-passed (default), -no-count-passed\fR
+specifies whether or not to include URLs that are PASSed.
+.TP
+\fB\-count-blocked, -no-count-blocked (default)\fR
+specifies whether or not to include URLs that are BLOCKed.
+.SH "WARNINGS"
+.PP
+Analysis of urls is slow since (very) large log files are processed.
+It may take 50 seconds to process 400 MB on a common server.
+.SH "SEE ALSO"
+.PP
+ReferenceManual_1_33.pdf, 
+\fIhttp://www.urlfilterdb.com/en/downloads/documentation.html\fR.
+.SH "AUTHOR"
+The developers of URLfilterDB \- http://www.urlfilterdb.com

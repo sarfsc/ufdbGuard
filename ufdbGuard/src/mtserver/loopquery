@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# loopquery
+#
+# call ufdbgclient 10 times per second to test ufdbguardd during reloads
+
+while true
+do
+   ./ufdbgclient -p 8888 -l . -d www.888.com  10.2.3.4  administrator
+   usleep 100000
+done
+

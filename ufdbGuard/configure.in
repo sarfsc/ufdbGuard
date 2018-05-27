@@ -1,0 +1,918 @@
+AC_INIT([ufdbGuard],[1.33.6])
+AC_CONFIG_HEADER(src/config.h)
+AC_PREFIX_DEFAULT(/usr/local/ufdbguard)
+
+# cache pwd
+MYCWD=`pwd`
+
+dnl Checks for programs.
+AC_PROG_CC
+# AM_PROG_CC_C_O
+AC_CANONICAL_HOST
+AC_PROG_CPP
+AC_PROG_MAKE_SET
+AC_PROG_YACC
+AC_PROG_LEX
+
+# AC_PROG_INSTALL	# no! we need our own install-sh to be able to use rpmbuild
+INSTALL="$MYCWD/install-sh -c"
+INSTALL_PROGRAM="$MYCWD/install-sh -c"
+INSTALL_SCRIPT="$MYCWD/install-sh -c"
+INSTALL_DATA="$MYCWD/install-sh -c -m 644"
+
+# AC_PATH_PROG(LYNX,lynx,false,$PATH:/usr/bin:/usr/local/bin/:/local/bin:/local/perl/bin:/usr/local/perl/bin)
+
+AC_PATH_PROG(PERL,perl,no,$PATH:/usr/bin:/usr/local/bin/:/local/bin:/local/perl/bin:/usr/local/perl/bin)
+if test $PERL = no
+then
+	echo
+	echo "** No Perl found in the PATH. Perl is required    *****  *****"
+	echo "   for the URL and user analysis scripts to work."
+	echo 
+fi
+
+AC_DEFINE_UNQUOTED(CONFIG_HOST_TYPE, "$host")
+
+CFLAGS=${CFLAGS:- -O2 -D_XOPEN_SOURCE=600 -D__EXTENSIONS__=1 -D_DEFAULT_SOURCE=1 -D_BSD_SOURCE=1}
+
+#if test "$CC" = gcc
+#then
+#   CFLAGS="$CFLAGS -std=c99"
+#fi
+
+# if test "$CC" = cc
+# then
+#    case "$host" in
+#       *solaris*)  CC=c99 ;;
+#       *) ;;
+#    esac
+# fi
+
+# Any variation of Linux
+AC_MSG_CHECKING(for Linux)
+case "$ac_cv_build" in
+   *linux*)
+      AC_MSG_RESULT(yes)
+      TARGET_LINUX="true"
+      AC_DEFINE([TARGET_OS_LINUX], [1], [Whether we build for Linux])
+      ;;
+   *)
+      AC_MSG_RESULT(no)
+      TARGET_LINUX="false"
+      ;;
+esac
+
+if test -d /opt/csw/lib 
+then
+   LIBS="-L/opt/csw/lib $LIBS "
+   CFLAGS="-I/opt/csw/include $CFLAGS "
+fi
+
+if test -d /usr/sfw/lib
+then
+   LIBS="-L/usr/sfw/lib $LIBS "
+   CFLAGS="-I/usr/sfw/include $CFLAGS "
+fi
+
+# rpmbuild uses the configure option '--disable-dependency-tracking'
+# so make a stub for it :
+AC_ARG_ENABLE(dependency-tracking,,,)
+
+extralibs=""
+extraincs=""
+
+sslprefix=/usr
+
+ssl_lib="$sslprefix/lib"
+ssl_inc="$sslprefix/include"
+
+AC_ARG_WITH(ssl,
+	[  --with-ssl=DIR          location of OpenSSL libraries and header files],
+                ssl_distribution=$withval)
+
+if test -n "$ssl_distribution"; then
+	ssl_lib="${ssl_distribution}/lib"
+	ssl_inc="${ssl_distribution}/include"
+fi
+
+AC_ARG_WITH(ssl_lib,
+	[  --with-ssl-lib=DIR      location of the OpenSSL library],
+                [ssl_lib="${withval}"])
+AC_ARG_WITH(ssl_inc,
+	[  --with-ssl-inc=DIR      location of the OpenSSL include files],
+                [ssl_inc="${withval}"])
+
+
+bz2prefix=/usr
+
+bz2_lib="$bz2prefix/lib"
+bz2_inc="$bz2prefix/include"
+
+AC_ARG_WITH(bz2,
+	[  --with-bz2=DIR          location of bz2 libraries and header files],
+                bz2_distribution=$withval)
+
+if test -n "$bz2_distribution"; then
+	bz2_lib="${bz2_distribution}/lib"
+	bz2_inc="${bz2_distribution}/include"
+fi
+
+AC_ARG_WITH(bz2_lib,
+	[  --with-bz2-lib=DIR      location of the bz2 library],
+                [bz2_lib="${withval}"])
+AC_ARG_WITH(bz2_inc,
+	[  --with-bz2-inc=DIR      location of the bz2 include files],
+                [bz2_inc="${withval}"])
+
+
+zlibprefix=/usr
+
+zlib_lib="$zlibprefix/lib"
+zlib_inc="$zlibprefix/include"
+
+AC_ARG_WITH(zlib,
+	[  --with-zlib=DIR         location of zlib libraries and header files],
+                zlib_distribution=$withval)
+
+if test -n "$zlib_distribution"; then
+	zlib_lib="${zlib_distribution}/lib"
+	zlib_inc="${zlib_distribution}/include"
+fi
+
+AC_ARG_WITH(zlib_lib,
+	[  --with-zlib-lib=DIR     location of the zlib library],
+                [zlib_lib="${withval}"])
+AC_ARG_WITH(zlib_inc,
+	[  --with-zlib-inc=DIR     location of the zlib include files],
+                [zlib_inc="${withval}"])
+
+ufdbprefix=$prefix
+if test "$ufdbprefix" = NONE
+then
+   ufdbprefix="$ac_default_prefix"
+fi
+
+AC_ARG_WITH(ufdb_config,
+	[  --with-ufdb-config=DIR  location of ufdbGuard config file],
+                ufdb_config=$withval)
+
+if test -n "$ufdb_config"
+then
+	AC_DEFINE(ACCONFIG)
+else
+        ufdb_config=$ufdbprefix/etc
+fi
+
+
+AC_ARG_WITH(ufdb_bindir,
+	[  --with-ufdb-bindir=DIR  location of ufdbGuard binaries and scripts],
+                ufdb_bindir=$withval)
+
+if test -n "$ufdb_bindir"
+then
+	AC_DEFINE(ACBINDIR)
+else
+        ufdb_bindir=$ufdbprefix/bin
+fi
+
+
+AC_ARG_WITH(ufdb_logdir,
+	[  --with-ufdb-logdir=DIR  location of ufdbGuard log file],
+                ufdb_logdir=$withval)
+
+if test -n "$ufdb_logdir"
+then
+	AC_DEFINE(ACLOGDIR)
+else
+        ufdb_logdir=$ufdbprefix/logs
+fi
+
+
+AC_ARG_WITH(ufdb_dbhome,
+	[  --with-ufdb-dbhome=DIR  location of ufdbGuard URL database directories],
+                ufdb_dbhome=$withval)
+
+if test -n "$ufdb_dbhome"
+then
+	AC_DEFINE(ACDBHOME)
+else
+        ufdb_dbhome=$ufdbprefix/blacklists
+fi
+
+
+AC_ARG_WITH(ufdb_images_dir,
+	[  --with-ufdb-images_dir=DIR  location of ufdbGuard httpd images],
+                ufdb_images_dir=$withval)
+
+if test -n "$ufdb_images_dir"
+then
+	AC_DEFINE(ACIMAGES_DIR)
+else
+        ufdb_images_dir=$ufdbprefix/images
+fi
+
+
+AC_ARG_WITH(ufdb_piddir,
+	[  --with-ufdb-piddir=DIR  location of ufdbGuard pid files -- must be a writable directory],
+                ufdb_piddir=$withval)
+
+if test -n "$ufdb_piddir"
+then
+	AC_DEFINE(ACPIDDIR)
+else
+	if test -d /var/run
+	then
+	   ufdb_piddir=/var/run/ufdbguard
+	else
+	   ufdb_piddir=/var/tmp
+	fi
+fi
+
+AC_ARG_WITH(ufdb_samplesdir,
+	[  --with-ufdb-samplesdir=DIR  location of ufdbGuard samples files -- must be a writable directory],
+                ufdb_samplesdir=$withval)
+
+if test -n "$ufdb_samplesdir"
+then
+	AC_DEFINE(ACSAMPLESDIR)
+else
+	ufdb_samplesdir=/var/ufdbguard/samples
+fi
+
+
+AC_ARG_WITH(ufdb_mandir,
+	[  --with-ufdb-mandir=DIR  location of man files -- must be a writable directory],
+                ufdb_mandir=$withval)
+
+if test -n "$ufdb_mandir"
+then
+	AC_DEFINE(ACMANDIR)
+else
+	if test -d /usr/share/man
+	then
+	   ufdb_mandir=/usr/share/man
+	else
+	   if test -d /usr/local/share/man
+	   then
+	      ufdb_mandir=/usr/local/share/man
+	   else
+	      if test -d /usr/local/man
+	      then
+	         ufdb_mandir=/usr/local/man
+	      else
+	         if test -d /usr/man
+		 then
+		    ufdb_mandir=/usr/man
+	         else
+		    echo "COULD NOT FIND directory to install man pages, using /usr/man"
+		    echo "Alternatively, use the --with-ufdb-mandir option."
+		    ufdb_mandir=/usr/man
+	         fi
+	      fi
+	   fi
+	fi
+fi
+
+
+AC_ARG_WITH(ufdb_user,
+	[  --with-ufdb-user=USER   username to be used for ufdbGuard (default: ufdb)],
+                ufdb_user=$withval)
+
+if test -z "$ufdb_user"
+then
+	ufdb_user=ufdb
+fi
+
+
+
+if test "$ssl_inc" != "/usr/include"
+then
+   CFLAGS="$CFLAGS -I$ssl_inc"
+   CPPFLAGS="$CPPFLAGS -I$ssl_inc"
+fi
+if test "$ssl_lib" != "/usr/lib" -a "$ssl_lib" != "/usr/lib64" -a "$ssl_lib" != "/lib" -a "$ssl_lib" != "/lib64"
+then
+   LDFLAGS="$LDFLAGS -L$ssl_lib"
+fi
+
+if test "$bz2_inc" != "/usr/include"
+then
+   CFLAGS="$CFLAGS -I$bz2_inc"
+   CPPFLAGS="$CPPFLAGS -I$bz2_inc"
+fi
+if test "$bz2_lib" != "/usr/lib" -a "$bz2_lib" != "/usr/lib64" -a "$bz2_lib" != "/lib" -a "$bz2_lib" != "/lib64"
+then
+   LDFLAGS="$LDFLAGS -L$bz2_lib"
+fi
+
+if test "$zlib_inc" != "/usr/include"
+then
+   CFLAGS="$CFLAGS -I$zlib_inc"
+   CPPFLAGS="$CPPFLAGS -I$zlib_inc"
+fi
+if test "$zlib_lib" != "/usr/lib" -a "$zlib_lib" != "/usr/lib64" -a "$zlib_lib" != "/lib" -a "$zlib_lib" != "/lib64"
+then
+   LDFLAGS="$LDFLAGS -L$zlib_lib"
+fi
+
+dnl Checks for libraries.
+
+AC_CHECK_LIB(m,main)
+
+STDLIBS0="$LIBS"
+
+# echo "host: $host"
+case "$host" in
+	*solaris*11*)	
+		echo "Checking for Solaris 11 specific libraries ..."
+		AC_CHECK_LIB(resolv,inet_pton)
+		AC_CHECK_LIB(nsl,clnt_create)
+		AC_CHECK_LIB(socket,bind)
+		AC_CHECK_LIB(rt,sched_yield)
+		# Solaris 11 needs for gcc -std=c99
+		# echo "CC = $CC  host = $host"
+		CFLAGS="$CFLAGS -DUFDB_ON_SOLARIS_11"
+		;;
+	*solaris*10*)	
+		echo "Checking for Solaris 10 specific libraries ..."
+		AC_CHECK_LIB(resolv,inet_pton)
+		AC_CHECK_LIB(nsl,clnt_create)
+		AC_CHECK_LIB(socket,bind)
+		AC_CHECK_LIB(rt,sched_yield)
+		# Solaris 10 needs for gcc -std=c99
+		# echo "CC = $CC  host = $host"
+		CFLAGS="$CFLAGS -DUFDB_ON_SOLARIS_10"
+		;;
+	*solaris*)	
+		echo "Checking for Solaris [789] specific libraries ..."
+		AC_CHECK_LIB(resolv,inet_pton)
+		AC_CHECK_LIB(nsl,clnt_create)
+		AC_CHECK_LIB(socket,bind)
+		AC_CHECK_LIB(rt,sched_yield)
+		;;
+      	*)
+		;;
+esac
+
+AC_CHECK_FUNCS(inet_pton)
+if test $ac_cv_func_inet_pton = no
+then
+   # inet_pton is not in the default libraries.  See if it's in some other.
+   for lib in resolv socket nsl inet bsd bind; do
+      AC_CHECK_LIB($lib, inet_pton, [AC_DEFINE(HAVE_INET_PTON)
+         LIBS="$LIBS -l$lib"; break])
+   done
+fi
+### AC_SEARCH_LIBS(inet_pton, [resolv socket nsl inet bsd bind])
+
+
+STDLIBS2="$LIBS"
+SOLARIS_LIBS="${STDLIBS2##$STDLIBS}"
+
+
+AC_LANG([C])
+
+AC_MSG_CHECKING(for POSIX compliant compiler)
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+	#define _XOPEN_SOURCE  600
+	#define __EXTENSIONS__ 1
+
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <sys/types.h>
+	#include <signal.h>
+	#include <errno.h>
+
+	int main() 
+	{
+		if (errno == 15367)
+		   printf( "weird!\n" );
+	        exit( 0 );
+	}	
+	
+	]])],[posix_source=yes],[posix_source=no],[posix_source=yes])
+
+if test $posix_source = no
+then
+	echo
+	echo "** Cannot compile source with _XOPEN_SOURCE set to 600"
+	echo "   Maybe you need to set CC=... or CFLAGS=... to use a POSIX compliant compiler"
+	echo
+	exit 1
+else
+   	echo yes
+fi
+
+
+AC_SEARCH_LIBS(pthread_create, pthread c_r, [],
+		AC_MSG_ERROR([** POSIX.4 threads not installed or broken **]))
+
+AC_CHECK_LIB(bz2,BZ2_bzBuffToBuffCompress,,[
+	echo
+	echo "** The libbz2 library is required for ufdbGuard to compile."
+	echo "   Install the libbz2 and libbz2-dev (or bzip2 and bzip2-devel) packages from"
+	echo "   the installation media, or use the --with-bz2-lib option."
+	echo
+	echo "   Alternatively, get libbz2 from http://www.bzip.org"
+	echo "   Use --with-bz2=DIR or --with-bz2-lib=DIR to specify"
+	echo "   its location. (default is $bz2prefix)"
+	echo
+	exit 1
+	])
+
+
+AC_CHECK_LIB(z,deflateEnd,,[
+	echo
+	echo "** The libz library is required for ufdbGuard to compile."
+	echo "   Install the libz and libz-dev (or zlib and zlib-devel) packages from"
+	echo "   the installation media, or use the --with-zlib-lib option."
+	echo
+	echo "   Alternatively, get libz from http://www.zlib.net"
+	echo "   Use --with-zlib=DIR or --with-zlib-lib=DIR to specify"
+	echo "   its location. (default is $zlibprefix)"
+	echo
+	exit 1
+	])
+
+
+# The -L options must be *before* the -l options !
+# so we copy this code to have the -L options first.
+
+if test -d /usr/sfw/lib
+then
+   # LIBS="-L/usr/sfw/lib $LIBS "
+   CFLAGS="-I/usr/sfw/include -L/usr/sfw/lib $CFLAGS "
+fi
+
+if test -d /opt/csw/lib 
+then
+   # LIBS="-L/opt/csw/lib $LIBS "
+   CFLAGS="-I/opt/csw/include -L/opt/csw/lib $CFLAGS "
+fi
+
+
+AC_CHECK_LIB(crypto,BF_set_key,,[
+	echo
+	echo "** The [Open]SSL crypto library is required for ufdbGuard to compile."
+	echo "   Install the libcrypto-dev or crypto-devel packages"
+	echo "   and/or the OpenSSL (openssl or ssl) packages"
+	echo "   from the installation media."
+	echo
+	exit 1
+	])
+
+AC_CHECK_LIB(ssl,SSL_CTX_new,,[
+	echo
+	echo "** The [Open]SSL library is required for ufdbGuard to compile."
+	echo "   Install the openssl-devel or libssl-dev packages from the installation media,"
+	echo "   or use the --with-ssl-lib option."
+	echo
+	echo "   Alternatively, get OpenSSL from http://www.openssl.org"
+	echo "   Use --with-ssl=DIR or --with-ssl-lib=DIR to specify"
+	echo "   its location. (default is $sslprefix)"
+	echo
+	exit 1
+	])
+
+# AC_CHECK_LIB(ssl,SSL_set_tlsext_host_name,  [AC_DEFINE(HAVE_SSL_SET_TLSEXT_HOST_NAME)], [
+# 	echo
+# 	echo "** The [Open]SSL library has no function called SSL_set_tlsext_host_name."
+# 	echo "   This may have a severe impact on SSL certificate verification and may even"
+# 	echo "   lead incorrect blocking of HTTPS-based sites."
+# 	echo "   IT IS THEREFORE HIGHLY RECOMMENDED TO UPGRADE THE SSL LIBRARY *****"
+# 	echo
+# 	])
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(regex.h unistd.h)
+
+# echo "ac_cv_header_regex_h = $ac_cv_header_regex_h   =========================="
+
+if test "$ac_cv_header_regex_h" = no
+then
+	echo 
+	echo "** Include file regex.h is not found."
+	echo "   Install package glibc-headers and/or glibc-devel from"
+	echo "   your installation media."
+	echo
+	exit 1
+fi
+
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+AC_STRUCT_TM
+
+dnl Checks for library functions.
+
+AC_CHECK_FUNCS(regcomp, , AC_MSG_ERROR([No regcomp library function.]) )
+AC_CHECK_FUNCS(regerror, , AC_MSG_ERROR([No regerror library function.]) )
+AC_CHECK_FUNCS(regexec, , AC_MSG_ERROR([No regexec library function.]) )
+AC_CHECK_FUNCS(strerror, , AC_MSG_ERROR([No strerror library function.]) )
+AC_CHECK_FUNCS(vsprintf, , AC_MSG_ERROR([No vsprintf library function.]) )
+AC_CHECK_FUNCS(sigaction, , )
+AC_CHECK_FUNCS(signal, , )
+AC_CHECK_FUNCS(getaddrinfo, , AC_MSG_ERROR([No getaddrinfo library function.]) )
+AC_CHECK_FUNCS(getipnodebyname, , )
+AC_CHECK_FUNCS(gethostbyname_r, , )
+AC_CHECK_FUNCS(getpwnam_r, , )
+AC_CHECK_FUNCS(setresuid, , )
+AC_CHECK_FUNCS(putc_unlocked, , )
+AC_CHECK_FUNCS(posix_memalign, , )
+
+AC_CHECK_FUNCS(pthread_setaffinity_np, , )
+AC_CHECK_FUNCS(pthread_rwlock_timedwrlock, , )
+AC_CHECK_FUNCS(pthread_rwlockattr_setkind_np, , )
+AC_CHECK_FUNCS(pthread_attr_setguardsize, , )
+
+dnl pthread rwlock support check.
+
+have_writer_pref=no
+
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+   #define _XOPEN_SOURCE 600
+   #define __EXTENSIONS__ 1
+   #include <pthread.h>
+   #include <stdlib.h>
+   int main()
+   {
+      pthread_rwlockattr_t mylock_attr;
+      pthread_rwlockattr_init( &mylock_attr );
+      pthread_rwlockattr_setkind_np( &mylock_attr, PTHREAD_RWLOCK_PREFER_WRITER_NP );
+      exit( 0 );
+   }
+   ]])],[have_writer_pref=yes],[have_writer_pref=no],[have_writer_pref=maybe])
+
+if test $have_writer_pref = maybe
+then
+   echo "Cannot guess if cross-compilation target has PTHREAD_RWLOCK_PREFER_WRITER_NP.  Assuming not"
+   have_writer_pref=no
+fi
+
+if test $have_writer_pref = yes
+then
+   AC_DEFINE([HAVE_PTHREAD_RWLOCK_PREFER_WRITER_NP], [1], [Define if pthread.h has PTHREAD_RWLOCK_PREFER_WRITER_NP])
+   echo "The pthread library supports writer rwlock preference."
+fi
+
+
+dnl OpenSSL compilation check.
+
+openssl_threadsafe=yes
+
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+	#include <stdlib.h>
+	#include <openssl/ssl.h>
+	int main() 
+	{
+		SSL_CTX * ssl_ctx;
+	        SSL_load_error_strings();
+		SSL_library_init();
+		ssl_ctx = SSL_CTX_new( SSLv23_client_method() );
+		if (ssl_ctx == NULL)
+		   exit( 1 );
+	        exit( 0 );
+	}	
+	]])],[ssl_ok=yes],[ssl_ok=no],[ssl_ok=yes])
+
+if test $ssl_ok = no
+then
+	echo
+	echo "** The OpenSSL header files are required."
+	echo "   Install package libssl-dev or openssl-devel."
+	echo "   Alternatively, use --with-ssl=DIR and/or --with-ssl-inc=DIR, "
+	echo "   --with-ssl-lib=DIR to specify a non-standard location."
+	echo 
+	exit 1;
+else
+   if test $openssl_threadsafe = no
+   then
+      AC_DEFINE([HAVE_THREADSAFE_OPENSSL_LIB], [0], [Define if the OpenSSL library is threadsafe])
+      echo "The OpenSSL library is not threadsafe"
+      echo "This is accepted but has a negative impact on HTTPS port checking performance."
+      echo
+   else
+      AC_DEFINE([HAVE_THREADSAFE_OPENSSL_LIB], [1], [Define if the OpenSSL library is threadsafe])
+      echo "The OpenSSL library is threadsafe."
+   fi
+fi
+
+
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+	#include <bzlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdlib.h>
+	int main()
+	{
+	   int  retval;
+	   char in[100];
+	   char out[1000];
+	   unsigned int outlen;
+	   
+	   strcpy( in, "hello world." );
+	   outlen = 1000;
+	   retval = BZ2_bzBuffToBuffCompress( out, &outlen, in, strlen(in), 6, 0, 40 );
+	   if (retval != BZ_OK)
+	      exit( 1 );
+	   exit( 0 );
+	}
+	]])],[bz2lib_ok=yes],[bz2lib_ok=no],[bz2lib_ok=yes])
+
+if test $bz2lib_ok = no
+then
+	echo
+	echo "** The bz2lib header files are required."
+	echo "   Install package libbz2-dev or bzip2-devel."
+	echo "   Use --with-bz2=DIR or --with-bz2-inc=DIR, "
+	echo "   --with-bz2-lib=DIR to specify its location."
+	echo 
+	exit 1;
+fi
+
+
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+	#include <zlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <stdlib.h>
+	int main()
+	{
+	   int  retval;
+	   char in[100];
+	   char out[1000];
+	   z_stream  zs;
+	   
+	   zs.zalloc = Z_NULL;
+	   zs.zfree  = Z_NULL;
+	   zs.opaque = Z_NULL;
+
+	   strcpy( in, "hello world." );
+	   zs.next_in  = (unsigned char *) in;
+	   zs.avail_in = strlen( (char *) zs.next_in );
+
+	   zs.next_out  = (unsigned char *) out;
+	   zs.avail_out = 1000;
+
+	   retval = deflateInit( &zs, Z_DEFAULT_COMPRESSION );
+	   if (retval != Z_OK)
+	      exit( 1 );
+	   exit( 0 );
+	}
+	]])],[zlib_ok=yes],[zlib_ok=no],[zlib_ok=yes])
+
+if test $zlib_ok = no
+then
+	echo
+	echo "** The zlib header files are required."
+	echo "   Install the libz-dev or zlib-devel packages."
+	echo "   Use --with-zlib=DIR or --with-zlib-inc=DIR, "
+	echo "   --with-zlib-lib=DIR to specify its location."
+	echo 
+	exit 1;
+fi
+
+
+AC_CHECK_DECLS(SYS_sched_setaffinity,
+    AC_DEFINE([HAVE_SYS_SYSCALL_H], [1], [Define if you support #include <sys/syscall.h>]),
+    ,
+    [
+#include <sys/syscall.h>
+    ]
+)
+
+# Better performance by reducing TLB misses:
+# For large pages support (Linux)
+if test "$TARGET_LINUX" = "true"
+then
+  # For SHM_HUGETLB on Linux
+  AC_CHECK_DECLS(SHM_HUGETLB, 
+      AC_DEFINE([HAVE_LARGE_PAGES], [1], 
+                [Define if you have large pages support])
+      AC_DEFINE([HUGETLB_USE_PROC_MEMINFO], [1],
+                [Define if /proc/meminfo shows the huge page size (Linux only)])
+      , ,
+      [
+#include <sys/shm.h>
+      ]
+  )
+fi
+
+detect_unix_sockets=initial
+AC_ARG_WITH(unix-sockets,
+   [[  --without-unix-sockets  disable detection of UNIX sockets]],
+   detect_unix_sockets=yes,
+   detect_unix_sockets=notset)
+
+if test "$with_unix_sockets" != no
+then
+   # Better performance by using UNIX sockets instead of IP sockets
+   AC_CHECK_DECLS(PF_UNIX, 
+      AC_DEFINE([HAVE_UNIX_SOCKETS], [1], 
+		[Define if you have UNIX socket support])
+      , ,
+      [
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+      ]
+   )
+else
+   echo
+   echo configure is run with --without-unix-sockets. No UNIX sockets will be used.
+   echo
+   AC_DEFINE([HAVE_UNIX_SOCKETS], [0],
+             [Configure override --without-unix-sockets])
+fi
+
+
+# rpmbuild likes to use --disable-dependency-tracking
+AC_ARG_ENABLE(dependency-tracking)
+
+
+AC_PATH_PROG(NSLOOKUP,nslookup,no,$PATH:/usr/bin:/bin:/usr/local/bin:/local/bin)
+if test $NSLOOKUP = no
+then
+   AC_PATH_PROG(HOST,host,no,$PATH:/usr/bin:/bin:/usr/local/bin:/local/bin)
+   if test $HOST = no
+   then
+      echo
+      echo "   The commands \"nslookup\" and \"host\" were not found."
+      echo "   nslookup or host is required to verify the installation procedure."
+      echo
+   fi
+fi
+
+AC_PATH_PROG(WGET,wget,no,$PATH:/usr/bin:/bin:/usr/local/bin:/local/bin)
+if test $WGET = no
+then
+   echo
+   echo "** The command \"wget\" was not found.                  *****  *****"
+   echo "   wget is required to receive URL database updates."
+   echo "   The wget package is most likely on your UNIX distribution media."
+   echo "   It is required to install the wget package and rerun configure."
+   echo
+fi
+
+AC_PATH_PROG(GDB,gdb,no,$PATH:/usr/bin:/bin:/usr/local/bin:/local/bin)
+if test $GDB = no
+then
+   echo
+   echo "** The command \"gdb\" was not found."
+   echo "   gdb produces valuable information when ufdbguardd terminates unexpectedly."
+   echo "   It is highly recommended to install the gdb package and rerun configure.    *****  *****"
+   echo
+fi
+
+AC_PATH_PROG(PSTACK,pstack,no,$PATH:/usr/bin:/bin:/usr/local/bin:/local/bin)
+if test $PSTACK = no
+then
+   echo
+   echo "** The command \"pstack\" was not found."
+   echo
+fi
+
+# if test "$ufdb_user" = ufdb
+# then
+#    echo
+#    echo "NOTICE: starting with v1.23, the new default user id for ufdbguardd is \"ufdb\"."
+#    echo
+# fi
+
+# echo ufdb_user = $ufdb_user
+# awk -F: '$1 == "'$ufdb_user'" { print $7 }' /etc/passwd
+SQUIDSHELL=` awk -F: '$1 == "'$ufdb_user'" { print $7 }' /etc/passwd `
+
+if test "$SQUIDSHELL" = ""
+then
+   echo
+   echo "** The user \"$ufdb_user\" was not found in /etc/passwd."
+   echo "   This user is a requirement for the installation of ufdbGuard."
+   if test $ufdb_user != squid
+   then
+      echo "   Alternatively, use the --with-ufdb-user option to specify an other username"
+   fi
+   echo 
+fi
+
+
+
+echo "Looking for system configuration directory..."
+if test -d /var/smoothwall				# Smoothwall
+then 
+   ufdb_sysconfigfile="/var/smoothwall/mods/ufdbguard/etc/sysconfig/ufdbguard"
+else
+   if test -d /etc/sysconfig				# RedHat, Fedora, SuSE, Ubuntu
+   then
+      ufdb_sysconfigfile="/etc/sysconfig/ufdbguard"
+   else
+      if test -d /etc/default				# Ubuntu, Debian 
+      then
+	 ufdb_sysconfigfile="/etc/default/ufdbguard"
+      else
+	 if test -d /etc/conf.d				# Gentoo
+	 then
+	    ufdb_sysconfigfile="/etc/conf.d/ufdb"
+	 else
+	    if test -f /usr/pkg/etc			# NetBSD
+	    then
+	       ufdb_sysconfigfile="/usr/pkg/etc/ufdbguard"
+	    else
+	       if test `uname -s` = FreeBSD 			# FreeBSD
+	       then
+		  ufdb_sysconfigfile="/usr/local/etc/ufdbguard"
+	       else
+		  ufdb_sysconfigfile="/etc/urlfilterdb/ufdbguard"
+	       fi
+	    fi
+	 fi
+      fi
+   fi
+fi
+echo "system configuration file is $ufdb_sysconfigfile"
+if test ! -f $ufdb_sysconfigfile
+then
+   echo "NOTICE: In case that a parameter was set in /etc/init.d/ufdb, it needs to be set again"
+   echo "in  $ufdb_sysconfigfile since /etc/init.d/ufdb will be overwritten."
+   echo "*******************************************************************************"
+fi
+
+VERSION=`echo $MYCWD | sed 's%.*/ufdbGuard-%%'`
+TESTDIR="$MYCWD/test"
+
+
+AC_SUBST(INSTALL)
+AC_SUBST(INSTALL_PROGRAM)
+AC_SUBST(INSTALL_SCRIPT)
+AC_SUBST(INSTALL_DATA)
+AC_SUBST(ac_n)
+AC_SUBST(ac_c)
+AC_SUBST(ufdb_config)
+AC_SUBST(ufdb_sysconfigfile)
+AC_SUBST(ufdb_cfgdir)
+AC_SUBST(ufdb_bindir)
+AC_SUBST(ufdb_logdir)
+AC_SUBST(ufdb_piddir)
+AC_SUBST(ufdb_samplesdir)
+AC_SUBST(ufdb_mandir)
+AC_SUBST(ufdb_dbhome)
+AC_SUBST(ufdb_images_dir)
+AC_SUBST(ufdb_user)
+AC_SUBST(PACKAGE_VERSION)
+AC_SUBST(VERSION)
+AC_SUBST(WGET)
+AC_SUBST(PERL)
+AC_SUBST(GDB)
+AC_SUBST(PSTACK)
+AC_SUBST(TESTDIR)
+AC_SUBST(SOLARIS_LIBS)
+
+AC_CONFIG_FILES([
+           Makefile 
+	   src/version.h 
+	   src/ufdb.h 
+	   src/sg.h 
+	   src/Makefile 
+	   src/ufdbUpdate 
+	   src/ufdbConvertDB
+	   src/ufdbGuard.conf
+	   src/install_etcfiles.sh
+	   src/init.ufdbguard
+	   src/mtserver/Makefile 
+	   src/mtserver/ufdb.sh
+	   src/mtserver/ufdb-pstack
+	   src/mtserver/sysconfig.ufdbguard
+	   doc/Makefile
+           test/Makefile
+	   test/test1.conf
+	   test/test2.conf
+	   samples/Makefile ])
+
+AC_OUTPUT
+
+# We do not want to use yacc/bison and lex/flex on the system of a client.
+# so simply copy y.tab.c.bison to y.tab.c and lex.yy.c.flex to lex.yy.c
+# to prevent calling yacc/bison and lex/flex.
+
+if test -d "$ufdb_dbhome"
+then
+   echo
+   echo "In case that you are upgrading, read the section about upgrading"
+   echo "in the Reference Manual carefully."
+fi
+
+( cd src ; cp y.tab.c.bison y.tab.c ; cp y.tab.h.bison y.tab.h ; cp lex.yy.c.flex lex.yy.c )
+
+echo
+printf "user:         %-25s   use --with-ufdb-user=USER to override\n"  $ufdb_user
+printf "config file:  %-25s   \n" $ufdb_sysconfigfile
+printf "config dir:   %-25s   use --with-ufdb-config=DIR to override\n" $ufdb_config
+printf "binaries dir: %-25s   use --with-ufdb-bindir=DIR to override\n" $ufdb_bindir
+printf "pid file dir: %-25s   use --with-ufdb-piddir=DIR to override\n" $ufdb_piddir
+printf "man page dir: %-25s   use --with-ufdb-mandir=DIR to override\n" $ufdb_mandir
+echo
+
+exit 0
+

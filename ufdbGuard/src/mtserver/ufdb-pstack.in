@@ -1,0 +1,242 @@
+#!/bin/sh
+#
+# ufdb-pstack: print a stack dump
+# based upon pstack of the gdb package, Copyright by FSF
+# modifications by Marcus Kool
+#
+# RCS: $Id: ufdb-pstack.in,v 1.27 2017/04/21 14:47:05 root Exp root $
+
+trap "echo ignoring signals" 1 2 3 4 5 6 7 8 10 11 12 13 14 15 20
+
+unset MALLOC_CHECK_  # glibc
+unset MALLOC_OPTIONS # BSD
+unset MALLOCTYPE     # AIX
+unset MALLOCOPTIONS  # AIX
+unset MALLOCDEBUG    # AIX
+unset UMEM_DEBUG     # Solaris
+unset MALLOC_DEBUG   # Solaris
+
+PATH=/bin:/usr/bin:$PATH
+export PATH
+
+umask 022
+
+if [ -d /opt/csw/bin ]
+then
+   PATH=/opt/csw/bin:$PATH
+   export PATH
+fi
+
+if [ -d /usr/xpg4/bin ]
+then
+   PATH=/usr/xpg4/bin:$PATH
+   export PATH
+fi
+
+R=${RANDOM:-$PPID}
+CRASHREPORT=/tmp/urlfilterdb.crashreport.$$.$R
+
+if test $# -lt 1; then
+    echo "Usage: `basename $0 .sh` <process-id> [<reason>]" 1>&2
+    exit 1
+fi
+
+PROCPID=$1
+shift
+
+REPORTOWNER=""
+if [ "$1" = "-U" ]
+then
+   REPORTOWNER="$2"
+   shift 2
+fi
+
+REASON="$*"
+if [ "$REASON" = "" ]
+then
+   REASON="no reason was given"
+fi
+
+(
+   echo "ufdb-pstack version" @PACKAGE_VERSION@ "was called for pid $PROCPID -- $REASON"
+   echo
+) > $CRASHREPORT
+
+echo "ufdb-pstack version" @PACKAGE_VERSION@ "was called for pid $PROCPID -- $REASON"
+
+corefile="none"
+backtrace="bt"
+
+
+KERNEL=`uname -s`
+case "$KERNEL" in
+   Linux)
+      if test ! -r /proc/$PROCPID
+      then
+	 if test -f $PROCPID
+	 then
+	    exe=icapd					# TODO: doublecheck this
+	    corefile=$PROCPID
+	    backtrace="thread apply all bt"
+	 else
+	    echo "Process $PROCPID not found."
+	    if [ -f /var/log/messages ]
+	    then
+	       SYSLOG=/var/log/messages
+	    else
+	       SYSLOG=/var/log/syslog
+	    fi
+	    tail -n 100 $SYSLOG | grep ufdbguardd
+	    ps -ef | grep ufdbguardd
+	    exit 1
+	 fi
+      else
+	 exe="/proc/$PROCPID/exe"
+	 corefile="$PROCPID"
+
+	 # GDB doesn't allow "thread apply all bt" when the process isn't
+	 # threaded; need to peek at the process to determine if that or the
+	 # simpler "bt" should be used.
+
+	 if test -d /proc/$PROCPID/task ; then
+	     # Newer kernel; has a task/ directory.
+	     if test `echo /proc/$PROCPID/task/* | wc -w` -gt 1  2>/dev/null ; then
+		 backtrace="thread apply all bt"
+	     fi
+	 elif test -f /proc/$PROCPID/maps ; then
+	     # Older kernel; go by it loading libpthread.
+	     if grep -e libpthread /proc/$PROCPID/maps > /dev/null 2>&1 ; then
+		 backtrace="thread apply all bt"
+	     fi
+	 fi
+      fi
+      ;;
+   *)
+      # just assume that $1 has the correct PID and ufdbguardd is in @ufdb_bindir@
+      exe=@ufdb_bindir@/ufdbguardd
+      corefile="$1"
+      backtrace="thread apply all bt"
+      ;;
+esac
+
+
+PSTACK=@PSTACK@
+GDB=@GDB@
+
+if [ -x "$GDB" ]
+then
+   # if $GDB -nx --quiet --batch --readnever > /dev/null 2>&1; then
+   #     readnever=--readnever
+   # else
+   #     readnever=
+   # fi
+
+   readnever=
+   interpreter="--interpreter=console"
+
+   echo "executing $GDB --quiet $interpreter $readnever -nx $exe  $corefile"
+   # Run gdb and strip out unwanted noise.
+   (
+   $GDB --quiet $interpreter $readnever -nx $exe  $corefile  2>&1 <<EOF
+   set prompt 
+   set interactive-mode off
+   set confirm off
+   set print null-stop on
+   set print object on
+   set print array on
+   set print frame-arguments all
+   set backtrace limit 50
+   set width 0
+   set height 0
+   set pagination no
+   print "UFDBglobalReconfig"
+   p UFDBglobalReconfig
+   print "UFDBglobalStatus"
+   p UFDBglobalStatus
+   print "UFDBglobalDatabaseStatus"
+   p UFDBglobalDatabaseStatus
+   print "UFDBglobalFatalError"
+   p UFDBglobalFatalError
+   print "UFDBglobalUserName"
+   p UFDBglobalUserName
+   print "UFDBglobalVersion"
+   p UFDBglobalVersion
+   print "UFDBglobalAdminEmail"
+   p UFDBglobalAdminEmail
+   print "UFDBglobalTunnelCheckMethod"
+   p UFDBglobalTunnelCheckMethod
+   bt full
+   thread apply all bt full
+   detach
+   quit
+EOF
+   ) |
+   sed  \
+       -e 's/ =   *{/ = {/g'  \
+       -e 's/ =   *"/ = "/g'  \
+       -e '/^#0 .* __kernel_vsyscall/d' \
+       -e '/ in clone /d' \
+       -e '/No symbol table info available/d' \
+       -e '/no debugging symbols found/d' \
+       -e '/Loaded symbols for/d' \
+       -e '/Reading symbols from/d' \
+       -e '/syscall-template.S: No such file or directory/d' \
+       -e '/^\[New Thread /d' \
+       -e '/^\[New LWP /d' \
+       -e 's/^No locals./        &/' \
+       -e 's/<value optimized out>/UNKNOWN/g'  \
+       -e 's/@@GLIBC_[\.0-9]*//g' \
+       -e '/^\[New LWP .*/d'  \
+       -e '/^done\.$/d'  \
+       -e '/^Backtrace stopped: Not enough registers or memory available to unwind further/d'  \
+       -e 's/signal handler called.*/&     ====================================================================/'  \
+       -e 's/HupSignalCaught.*/&     ====================================================================/'  \
+       -e 's/BadSignalCaught.*/&     ====================================================================/'  \
+   >> $CRASHREPORT
+
+elif [ -x "$PSTACK" ]
+then
+   $PSTACK $1 |
+   sed -n \
+      -e '/HupSignalCaught/s/$/     =================================================================/'  \
+      -e '/BadSignalCaught/s/$/     =================================================================/'  \
+      -e 'p'  \
+   >> $CRASHREPORT
+else
+   echo "gdb nor pstack is installed on this system so a crash report cannot be generated ..."
+fi
+
+echo "This crash report is also saved in $CRASHREPORT"
+
+(
+   echo
+   uname -a
+   echo
+   uptime
+   echo
+   lscpu
+   echo
+   if [ -f /proc/meminfo ]
+   then
+      cat /proc/meminfo
+   else
+      echo no /proc/meminfo
+   fi
+   echo
+   gdb --version
+   echo
+   gcc --version
+   echo
+   date
+   echo
+) >> $CRASHREPORT
+
+if [ "$REPORTOWNER" != "" ]
+then
+   chown $REPORTOWNER $CRASHREPORT
+fi
+
+cat $CRASHREPORT
+
+exit 0
+

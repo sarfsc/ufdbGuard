@@ -1,0 +1,722 @@
+#
+# RCS: $Id: Makefile.in,v 1.105 2017/09/17 21:30:11 root Exp root $
+
+SHELL=/bin/sh
+
+.SUFFIXES:
+.SUFFIXES: .c .o .pl .pm .pod .html .man
+
+RUNAS   = @ufdb_user@
+
+CC	= @CC@ 
+CPP	= @CPP@
+LEX	= @LEX@
+YACC	= @YACC@
+PERL	= @PERL@
+MKDIR   = @top_srcdir@/mkinstalldirs
+CHOWN   = chown $(RUNAS)
+INSTALL	= @INSTALL@ -o $(RUNAS)
+INSTALL_DATA = @INSTALL_DATA@ 
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ 
+
+RM = rm -f
+# SOLARIS_LIBS= -lsocket -lnsl -lrt -L /opt/csw/lib
+
+CFLAGS	= @CFLAGS@
+CPPFLAGS= @CPPFLAGS@
+LDFLAGS	= @LDFLAGS@  
+LIBS	= @LIBS@
+DEFS	= @DEFS@
+SOLARIS_LIBS = @SOLARIS_LIBS@
+
+# The following flags are tuned for Linux 2.6 on Intel with gcc 3.3.6
+INCLUDES         = -I.. -I. -I$(srcdir) 
+MALLOC_DEBUG     = # MALLOC_CHECK_=2
+CFLAGS_PROFILING = # -pg -g -O2 # -finline-limit=1
+CFLAGS_DEBUG     = # -O2 -g # -O0 -g  -DUFDB_FREE_MEMORY # -DUFDB_DO_DEBUG
+LINK_DEBUG	 = # -lmemusage
+LINK_DEBUG	 = # -static # -static-libgcc -static
+CFLAGS_OPT	 = # -Wall -O2 -momit-leaf-frame-pointer # -march=pentium4
+XXCFLAGS         = -Wall -O2 -momit-leaf-frame-pointer # -minline-all-stringops
+XXXCFLAGS  	 = -ansi -Wall $(CFLAGS_OPT) -I. \
+                   $(CFLAGS_DEBUG) $(CFLAGS_PROFILING)
+XXXLDFLAGS       = $(CFLAGS_PROFILING) $(CFLAGS_DEBUG) $(LINK_DEBUG)
+
+COMPILE          = $(CC) $(INCLUDES) $(CFLAGS)
+LINK             = $(CC) $(CFLAGS) $(LDFLAGS) -o $@
+
+top_srcdir = @top_srcdir@
+srcdir     = @srcdir@
+VPATH      = @srcdir@
+
+prefix	    = @prefix@
+exec_prefix = @exec_prefix@
+bindir	    = @ufdb_bindir@
+piddir	    = @ufdb_piddir@
+logdir	    = @ufdb_logdir@
+cfgdir	    = @ufdb_config@
+syscfgfile  = @ufdb_sysconfigfile@
+dbhome      = @ufdb_dbhome@
+images_dir  = @ufdb_images_dir@
+
+
+UFDBOBJS= \
+	  engine.o  \
+          ufdbbase.o sgDiv.o crypt.o y.tab.o lex.yy.o ufdbLookup.o ufdblib.o \
+	  sgLog.o ufdbLogConfig.o \
+	  ufdbglobals.o ufdbdb.o ufdbUserlist.o \
+	  ufdbchkport.o httpsQueue.o \
+	  ufdbHostnames.o \
+	  ufdbHashtable.o
+
+first:  ufdbGenTable
+	@echo
+	@echo "or maybe you want to type 'make all' (see the Reference Manual)"
+
+all::
+	@echo making $@ in `basename \`pwd\``
+
+all::	$(UFDBOBJS) ufdbGenTable ufdbhttpd ufdbAnalyse daemon \
+		ufdb_analyse_urls.pl ufdb_analyse_users.pl ufdb_top_urls.pl ufdb_top_users.pl
+	@echo making $? in `basename \`pwd\``
+
+ufdbGuard:	main.o ufdbguard.o $(UFDBOBJS)
+	$(LINK) main.o ufdbguard.o $(UFDBOBJS) $(LIBS) 
+
+conf: y.tab.o lex.yy.o
+	$(COMPILE) -o conf y.tab.o lex.yy.o
+
+ufdbguard.o:	ufdbguard.c sg.h ufdb.h
+	$(COMPILE) -c ufdbguard.c
+
+main.o:	main.c sg.h ufdb.h
+	$(COMPILE) -c main.c
+
+sgLog.o:	sgLog.c sg.h ufdb.h
+	$(COMPILE) -c sgLog.c
+
+sgDiv.o: sgDiv.c sg.h ufdb.h
+	$(COMPILE) -c sgDiv.c
+
+httpserver.o: httpserver.c ufdb.h ufdblib.h httpserver.h version.h
+	$(COMPILE) -c httpserver.c
+
+ufdbAnalyse.o: ufdbAnalyse.c ufdb.h ufdblib.h
+	$(COMPILE) -c ufdbAnalyse.c
+
+ufdbchkport.o: ufdbchkport.c ufdbchkport.h ufdb.h
+	$(COMPILE) -c ufdbchkport.c
+
+ufdbHostnames.o: ufdbHostnames.c ufdbHostnames.h ufdb.h
+	$(COMPILE) -c ufdbHostnames.c
+
+ufdbbase.o: ufdbbase.c ufdb.h
+	$(COMPILE) -c ufdbbase.c
+
+engine.o: engine.c ufdb.h sg.h ufdblib.h ufdbdb.h ufdbchkport.h
+	$(COMPILE) -c engine.c
+
+ufdbLookup.o: ufdbLookup.c ufdb.h
+	$(COMPILE) -c ufdbLookup.c
+
+ufdblib.o: ufdblib.c ufdblib.h ufdb.h
+	$(COMPILE) -c ufdblib.c
+
+ufdbdb.o: ufdbdb.c strcmpurlpart.static.c ufdbdb.h ufdb.h sg.h
+	$(COMPILE) -c ufdbdb.c
+
+httpsQueue.o: httpsQueue.c httpsQueue.h ufdb.h
+	$(COMPILE) -c httpsQueue.c
+
+ufdbHhashtable.o: ufdbHashtable.c ufdbHashtable.h ufdb.h
+	$(COMPILE) -c ufdbHashtable.c
+
+lex.yy.o: lex.yy.c y.tab.h sg.h ufdb.h
+	$(COMPILE) -D_XOPEN_SOURCE=600 -D__EXTENSIONS__=1 -D_DEFAULT_SOURCE=1 -D_BSD_SOURCE=1 -c lex.yy.c
+
+y.tab.o: y.tab.c y.tab.h sg.h ufdb.h
+	$(COMPILE) -D_XOPEN_SOURCE=600 -D__EXTENSIONS__=1 -D_DEFAULT_SOURCE=1 -D_BSD_SOURCE=1 -c y.tab.c
+
+lex.yy.c: sg.l sg.h ufdb.h
+	-$(LEX) sg.l 
+	if [ ! -s lex.yy.c ]; then cp lex.yy.c.flex lex.yy.c ; fi
+
+lex.yy.c.flex: sg.l sg.h ufdb.h
+	-$(LEX) sg.l
+	mv -f lex.yy.c lex.yy.c.flex
+
+y.tab.c y.tab.h: sg.y 
+	-$(YACC) -d sg.y 
+	if [ ! -s y.tab.c ] ; then cp y.tab.c.bison y.tab.c;  cp y.tab.h.bison y.tab.h; fi
+
+y.tab.c.bison y.tab.h.bison: sg.y 
+	-$(YACC) -d sg.y
+	mv -f y.tab.c y.tab.c.bison
+	mv -f y.tab.h y.tab.h.bison
+
+#
+# Dependencies for installing
+#
+
+daemon: $(UFDBOBJS)
+	cd mtserver; $(MAKE)
+
+ufdbhttpd: ufdbhttpd.o httpserver.o ufdbglobals.o ufdbbase.o ufdblib.o crypt.o
+	$(LINK) ufdbhttpd.o httpserver.o ufdbglobals.o ufdbbase.o ufdblib.o crypt.o $(LIBS)
+
+perftest1: perftest1.o ufdbbase.o ufdblib.o sgLog.o crypt.o
+	$(LINK) perftest1.o ufdbbase.o ufdblib.o sgLog.o crypt.o $(LIBS)
+
+skype:  ufdbpeek
+	./ufdbpeek -S 212.187.172.36 ; echo
+	./ufdbpeek -S 201.21.44.109 ; echo
+	./ufdbpeek -S 195.46.253.219 ; echo
+	./ufdbpeek -S 189.60.178.218 ; echo
+	./ufdbpeek -S 189.4.48.216 ; echo
+	./ufdbpeek -S 127.0.0.1 ; echo
+	./ufdbpeek -S 201.37.252.147 ; echo
+	:
+	./ufdbpeek -S 189.110.217.176 ; echo
+	./ufdbpeek -S 201.83.213.173 ; echo
+	./ufdbpeek -S 201.82.126.39 ; echo
+	./ufdbpeek -S 201.83.213.173 ; echo
+	./ufdbpeek -S 201.82.126.39 ; echo
+	./ufdbpeek -S 201.68.248.132 ; echo
+	:
+	./ufdbpeek -S 190.162.54.100 ; echo
+	./ufdbpeek -S 190.254.192.114 ; echo
+	./ufdbpeek -S 190.19.192.98 ; echo
+	./ufdbpeek -S 186.83.240.8 ; echo
+	./ufdbpeek -S 190.247.17.35 ; echo
+	:
+	./ufdbpeek -S 209.211.201.45 ; echo
+
+
+
+iptst: iptst.o ufdbbase.o ufdblib.o crypt.o sgLog.o
+	$(LINK) iptst.o ufdbbase.o ufdblib.o crypt.o sgLog.o $(LIBS)
+
+ipt: iptst
+	LANG=en_US.UTF-8 iptst
+
+install::	 install.bin install.etc install.pid install.security install.checks install.log
+	@echo making $@ in `basename \`pwd\``
+	@echo
+	@echo "=================================================================="
+	@echo "ufdbGuard daemon runs with user id" $(RUNAS)
+	@echo "ufdbGuard binaries are installed in" $(bindir)
+	@echo "ufdbGuard configuration file is installed in" $(cfgdir)
+	@echo "ufdbGuard system configuration file is installed in" $(syscfgfile)
+	@echo "=================================================================="
+	@echo
+
+uninstall::	 uninstall.bin
+	@echo making $@ in `basename \`pwd\``
+
+install.bin: ufdbGenTable ufdbAnalyse ufdbhttpd createdirs install.mt install.images install.update
+	@echo making $@ in `basename \`pwd\``
+	$(INSTALL_PROGRAM) ufdbConvertDB $(DESTDIR)$(bindir)/ufdbConvertDB
+	$(INSTALL_PROGRAM) ufdbGenTable $(DESTDIR)$(bindir)/ufdbGenTable
+	$(INSTALL_PROGRAM) ufdbAnalyse $(DESTDIR)$(bindir)/ufdbAnalyse
+	$(INSTALL_PROGRAM) ufdbhttpd $(DESTDIR)$(bindir)/ufdbhttpd
+	$(INSTALL_PROGRAM) ufdb_analyse_urls.pl $(DESTDIR)$(bindir)/ufdb_analyse_urls
+	$(INSTALL_PROGRAM) ufdb_analyse_users.pl $(DESTDIR)$(bindir)/ufdb_analyse_users
+	$(INSTALL_PROGRAM) ufdb_top_urls.pl $(DESTDIR)$(bindir)/ufdb_top_urls
+	$(INSTALL_PROGRAM) ufdb_top_users.pl $(DESTDIR)$(bindir)/ufdb_top_users
+	@if [ -f ufdbpeek ] ; then $(INSTALL_PROGRAM) ufdbpeek $(DESTDIR)$(bindir)/ufdbpeek ; fi
+	@if [ -f $(DESTDIR)$(cfgdir)/ufdbGuard.conf ] ; then echo "$(DESTDIR)$(cfgdir)/ufdbGuard.conf already exists." ; else $(INSTALL_DATA) ufdbGuard.conf $(DESTDIR)$(cfgdir)/ufdbGuard.conf ; fi
+
+install.pid::
+	if [ $(piddir) != /var/tmp ] ; then $(INSTALL) -d $(DESTDIR)$(piddir) ; fi
+
+install.update::
+	./copy_user_params $(DESTDIR)$(bindir)/ufdbUpdate ufdbUpdate
+	$(INSTALL_PROGRAM) ufdbUpdate $(DESTDIR)$(bindir)/ufdbUpdate
+
+install.security::
+	echo "Installing SSL root certificates"
+	$(INSTALL_DATA) security/cacerts  $(DESTDIR)$(dbhome)/security/cacerts
+
+install.etc::
+	sh ./install_etcfiles.sh $(DESTDIR)$(cfgdir) $(DESTDIR)$(bindir) $(DESTDIR)$(syscfgfile)
+
+install.webmin::
+	@echo
+	@echo "========================================================================"
+	@echo "The GUI is a webmin module (see also http://www.webmin.com)."
+	@echo "If webmin is installed, then import the ufdbGuard module (ufdbGuard.wbm)"
+	@echo "and configure the user access rights for the ufdbGuard module."
+	@echo "The full pathname for the module is:"
+	@echo `cd ../webmin ; pwd`/ufdbguard.wbm
+	@echo "========================================================================"
+	@echo
+
+install.checks::
+	-@./check_config_file $(DESTDIR)$(cfgdir)/ufdbGuard.conf
+	-@./check_dns "@NSLOOKUP@" "@HOST@"
+	-@./check_gdb "@GDB@"
+
+install.log::
+	-@if [ "$(DESTDIR)" = "" ] ; then \
+	   sh ./install_log.sh $(RUNAS) $(prefix) $(DESTDIR)$(bindir) $(DESTDIR)$(logdir) $(DESTDIR)$(cfgdir) $(DESTDIR)$(images_dir) $(DESTDIR)$(dbhome) $(DESTDIR)$(syscfgfile) ;  \
+	fi
+
+createdirs::
+	echo "Creating directories ..."
+	$(INSTALL) -d $(DESTDIR)$(bindir) 
+	$(INSTALL) -d $(DESTDIR)$(logdir) 
+	$(INSTALL) -d $(DESTDIR)$(cfgdir)
+	$(INSTALL) -d $(DESTDIR)$(dbhome)
+	$(INSTALL) -d $(DESTDIR)$(dbhome)/security
+	$(INSTALL) -d $(DESTDIR)$(images_dir)
+
+uninstall.bin::
+	@echo making $@ in `basename \`pwd\``
+	$(RM) $(DESTDIR)$(bindir)/ufdbGuard
+	$(RM) $(DESTDIR)$(bindir)/ufdbguardd
+	$(RM) $(DESTDIR)$(bindir)/ufdbsignal
+	$(RM) $(DESTDIR)$(bindir)/ufdbgclient
+	$(RM) $(DESTDIR)$(bindir)/ufdbhttpd
+	$(RM) $(DESTDIR)$(bindir)/ufdb_analyse_urls
+	$(RM) $(DESTDIR)$(bindir)/ufdb_analyse_users
+	$(RM) $(DESTDIR)$(bindir)/ufdb_top_urls
+	$(RM) $(DESTDIR)$(bindir)/ufdb_top_users
+
+
+install.mt::
+	cd mtserver ; $(MAKE)
+	$(INSTALL_PROGRAM) mtserver/ufdbguardd  $(DESTDIR)$(bindir)/ufdbguardd
+	$(INSTALL_PROGRAM) mtserver/ufdbgclient $(DESTDIR)$(bindir)/ufdbgclient
+	$(INSTALL_PROGRAM) mtserver/ufdb-pstack $(DESTDIR)$(bindir)/ufdb-pstack
+	-@echo "ignore the next error from chown when building a package as non-root user"
+	-$(RM) $(DESTDIR)$(bindir)/ufdbsignal ; \
+		$(INSTALL_PROGRAM) mtserver/ufdbsignal  $(DESTDIR)$(bindir)/ufdbsignal  ; \
+		chown root $(DESTDIR)$(bindir)/ufdbsignal  ;  \
+		chmod +s $(DESTDIR)$(bindir)/ufdbsignal
+
+install.images::
+	$(INSTALL_DATA) images/forbidden-normal-de.png $(DESTDIR)$(images_dir)/forbidden-normal-de.png
+	$(INSTALL_DATA) images/forbidden-normal-en.png $(DESTDIR)$(images_dir)/forbidden-normal-en.png
+	$(INSTALL_DATA) images/forbidden-normal-es.png $(DESTDIR)$(images_dir)/forbidden-normal-es.png
+	$(INSTALL_DATA) images/forbidden-normal-fr.png $(DESTDIR)$(images_dir)/forbidden-normal-fr.png
+	$(INSTALL_DATA) images/forbidden-normal-it.png $(DESTDIR)$(images_dir)/forbidden-normal-it.png
+	$(INSTALL_DATA) images/forbidden-normal-nl.png $(DESTDIR)$(images_dir)/forbidden-normal-nl.png
+	$(INSTALL_DATA) images/forbidden-normal-pl.png $(DESTDIR)$(images_dir)/forbidden-normal-pl.png
+	$(INSTALL_DATA) images/forbidden-normal-pt.png $(DESTDIR)$(images_dir)/forbidden-normal-pt.png
+	$(INSTALL_DATA) images/forbidden-normal-tr.png $(DESTDIR)$(images_dir)/forbidden-normal-tr.png
+	$(INSTALL_DATA) images/forbidden-normal-sv.png $(DESTDIR)$(images_dir)/forbidden-normal-sv.png
+	$(INSTALL_DATA) images/no-ads.png      $(DESTDIR)$(images_dir)/no-ads.png
+	$(INSTALL_DATA) images/smallcross.png  $(DESTDIR)$(images_dir)/smallcross.png
+	$(INSTALL_DATA) images/square.png      $(DESTDIR)$(images_dir)/square.png
+	$(INSTALL_DATA) images/transparent.png $(DESTDIR)$(images_dir)/transparent.png
+	$(INSTALL_DATA) images/default.flv     $(DESTDIR)$(images_dir)/default.flv
+	$(INSTALL_DATA) images/default.mp3     $(DESTDIR)$(images_dir)/default.mp3
+	$(INSTALL_DATA) images/default.wmv     $(DESTDIR)$(images_dir)/default.wmv
+	$(INSTALL_DATA) images/default.mpeg    $(DESTDIR)$(images_dir)/default.mpeg
+
+update::
+	@echo making $@ in `basename \`pwd\``
+
+update:: lex.yy.c.flex y.tab.c.bison y.tab.h.bison
+
+tu:
+	./copy_user_params $(DESTDIR)$(bindir)/ufdbUpdate ufdbUpdate
+
+#
+# Dependencies for cleanup
+#
+
+clean::
+	@echo making $@ in `basename \`pwd\``
+	$(RM) *~ *.bak core core.* *.log *.log.[0-9] *.error
+	$(RM) *.o y.tab.c y.tab.h ufdbGuard ufdbGenTable ufdbAnalyse ufdbPrintTable ufdbhttpd 
+	$(RM) ufdbGenTable2 ufdbGenTable3
+	$(RM) ipv6 iptst rwtest lex.yy.c
+	$(RM) gentable.cg.out gentable.cg.report* vt.log vt2.log
+	$(RM) ttt.p1 ttt.in1 ttt.p2 ttt.in2 ttt.p3 ttt.in3 
+	$(RM) ufdb_analyse_urls.pl ufdb_analyse_users.pl ufdb_top_urls.pl ufdb_top_users.pl
+	-@cd mtserver  &&  $(MAKE) clean
+	-@cd api 2>/dev/null  &&  $(MAKE) clean
+
+realclean:: clean
+	@echo making $@ in `basename \`pwd\``
+	$(RM) ufdbpeek
+	$(RM) TAGS tags *.orig
+	$(RM) ttt domains*.ufdb domains*.stderr print*.out gmon.out *.ufdb perftest1
+	$(RM) nohup.out v1.out v2.out v2.stderr v3.out v3v.out v4.out d4.out d4.prof d3.out d3.prof 
+	$(RM) e1.out u2.out u00.out u0.out v00.out s2.out p33.prof t3.prof 100000.out
+	$(RM) install.log
+
+distclean:: realclean
+	@echo making $@ in `basename \`pwd\``
+	$(RM) Makefile sg.h ufdb.h config.h ufdbUpdate ufdbConvertDB ufdbGuard.conf
+	$(RM) init.ufdbguard install_etcfiles.sh version.h
+	$(RM) d0.ufdb d1.ufdb d2.ufdb
+	-cd mtserver ;  $(MAKE) distclean
+
+apidistclean: distclean
+	@echo making $@ in `basename \`pwd\``
+	-cd api ;  $(MAKE) distclean
+
+grab: ufdbGrab
+	./ufdbGrab $(DESTDIR)$(cfgdir) $(DESTDIR)$(logdir)
+	
+#
+# Dependencies for maintenance
+#
+
+subdir = src
+
+Makefile: Makefile.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdb.h: ufdb.h.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+sg.h: sg.h.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdbConvertDB: ufdbConvertDB.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdbUpdate: ufdbUpdate.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+install_etcfiles.sh: install_etcfiles.sh.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+init.ufdbguard: init.ufdbguard.in ../config.status
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ctags: 
+	ctags *.y *.l sg*.c strcmpurlpart.static.c engine.c crypt.c genTable.c printTable.c ufdbpeek.c ufdb*c ufdbHashtable.c http*.c *.h
+
+rwtest.o: rwtest.c
+	gcc -O0 -c rwtest.c
+
+rwtest: rwtest.o
+	$(LINK) $(LINK_DEBUG) rwtest.o -lpthread
+
+ufdbGenTable: genTable.o ufdbglobals.o ufdbbase.o ufdblib.o ufdbdb.o crypt.o 
+	$(LINK) $(LINK_DEBUG) genTable.o ufdbglobals.o ufdbbase.o ufdblib.o ufdbdb.o crypt.o -lbz2 -lz $(SOLARIS_LIBS)  # $(LIBS)
+
+ufdbGenTable.static: remove.ufdbGenTable genTable.o ufdbglobals.o ufdbbase.o ufdblib.o crypt.o 
+	$(LINK) $(LINK_DEBUG) -static-libgcc -static genTable.o ufdbglobals.o ufdbbase.o ufdblib.o crypt.o -lbz2 -lz $(SOLARIS_LIBS)  
+	mv ufdbGenTable.static ufdbGenTable
+
+ufdb_analyse_urls.pl: ufdb_analyse_urls.pl.in
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdb_analyse_users.pl: ufdb_analyse_users.pl.in
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdb_top_urls.pl: ufdb_top_urls.pl.in
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+ufdb_top_users.pl: ufdb_top_users.pl.in
+	cd .. && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= ./config.status
+
+genTable.o:: genTable.c strcmpurlpart.static.c
+genTable2.o:: genTable2.c strcmpurlpart.static.c
+genTable3.o:: genTable3.c strcmpurlpart.static.c
+# 	gcc  -O0 -g -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 --param=ssp-buffer-size=1 -fstack-protector-all    -c -o genTable2.o genTable2.c
+
+ufdbdb.s: ufdbdb.c Makefile sh.h ufdb.h ufdblib.h
+	gcc -g -O3 -march=core2 -mtune=core2 -c ufdbdb.c -S -dA
+
+dd: ufdbGenTable2
+	-rm genTable2.o
+	@echo "      run -DD -d domains0.in -u urls0.in"
+	@echo "      run -DD -d domains2.in "
+	MALLOC_CHECK_=2 gdb -ix ./.gdbrc ./ufdbGenTable2
+
+ddv: ufdbGenTable2
+	valgrind --verbose --vgdb=yes --db-attach=yes --log-file=vt.log --leak-check=no --tool=memcheck ./ufdbGenTable2 -d domains3.in 2>vt2.log
+
+g2 ufdbGenTable2: genTable2.o ufdbbase.o ufdblib.o ufdbdb.o crypt.o 
+	$(LINK) $(LINK_DEBUG) genTable2.o ufdbbase.o ufdblib.o ufdbdb.o crypt.o -lbz2 -lz $(SOLARIS_LIBS)  # $(LIBS)
+
+ufdbGenTable3: genTable3.o ufdbbase.o ufdblib.o ufdbdb.o crypt.o 
+	$(LINK) $(LINK_DEBUG) genTable3.o ufdbbase.o ufdblib.o ufdbdb.o crypt.o -lbz2 -lz $(SOLARIS_LIBS)  # $(LIBS)
+
+g3: ufdbGenTable3
+
+ddt: ufdbGenTable ufdbGenTable2
+	: time ./ufdbGenTable -d /tmp/domains -u /tmp/urls 2>/dev/null
+	time ./ufdbGenTable2 -F 2.1 -p -n -d /tmp/domains -u /tmp/urls 2>/dev/null
+
+remove.ufdbGenTable:
+	-rm -f ufdbGenTable
+
+ufdbAnalyse: ufdbAnalyse.o ufdbglobals.o ufdblib.o ufdbbase.o crypt.o 
+	$(LINK) $(LINK_DEBUG) ufdbAnalyse.o ufdbglobals.o ufdblib.o ufdbbase.o crypt.o -lbz2 -lz $(SOLARIS_LIBS)  
+
+ufdbPrintTable: printTable.o ufdbglobals.o ufdblib.o ufdbdb.o ufdbbase.o crypt.o
+	$(LINK) $(LINK_DEBUG) printTable.o ufdbglobals.o ufdblib.o ufdbdb.o ufdbbase.o crypt.o -lbz2 -lz  # $(LIBS)
+
+ufdbpeek: ufdbpeek.o ufdbchkport.o ufdbHashtable.o httpsQueue.o ufdbglobals.o ufdblib.o ufdbdb.o ufdbbase.o sgLog.o crypt.o y.tab.o lex.yy.o engine.o ufdbUserlist.o ufdbLookup.o sgDiv.o
+	$(LINK) $(LINK_DEBUG) ufdbpeek.o ufdbchkport.o ufdbHashtable.o httpsQueue.o ufdbglobals.o ufdblib.o ufdbdb.o ufdbbase.o sgLog.o crypt.o y.tab.o lex.yy.o engine.o ufdbUserlist.o ufdbLookup.o sgDiv.o $(LIBS)
+
+t7: ufdbhttpd
+	ufdbhttpd -d -p 9999 -I /local/squid/images -l . 
+
+t7d: t7k ufdbhttpd
+	echo "   run -D -d -p 9999 -I /local/squid/images -l ."
+	gdb ufdbhttpd
+
+t7p: ufdbpeek
+	-valgrind  --partial-loads-ok=no  --verbose --track-fds=yes --tool=memcheck ./ufdbpeek -d 12.130.81.218
+	# -valgrind  --partial-loads-ok=no  --verbose --track-fds=yes --tool=memcheck ./ufdbpeek www.lotuslive.com
+
+t7k: 
+	-killall ufdbhttpd
+
+t77:
+	wget -q -O - --header='Accept-Language: it' "http://localhost:8081/cgi-bin/URLblocked.cgi?admin=Marcus&mode=transparent&category=adult&clientuser=paulo&url=www.sex.com"
+	@echo
+	wget -q -O - --header='Accept-Language: nl' "http://localhost:8081/cgi-bin/URLblocked.cgi?admin=Marcus Kool&mode=transparent&category=adult&clientuser=jan&clientgroup=allSystems&url=www.sex.com"
+	@echo
+
+t8: ufdbpeek
+	./ufdbpeek www.ibm.com
+
+t9: ufdbpeek
+	./ufdbpeek alice.sni.velox.ch
+	./ufdbpeek bob.sni.velox.ch
+	./ufdbpeek www.blogger.com
+	./ufdbpeek forge.ogf.org
+	./ufdbpeek forge.gridforum.org
+	./ufdbpeek en.wiki.aktivix.org
+	./ufdbpeek www.urlfilterdb.com 
+	./ufdbpeek Webmail.Xs4all.nl
+	./ufdbpeek gna.org
+	./ufdbpeek www.microsoft.com
+	./ufdbpeek www.ibm.com
+	./ufdbpeek www.goedkopen.nl
+	./ufdbpeek powerlink.emc.com
+	./ufdbpeek mijn.postbank.nl
+	./ufdbpeek safe2login.com
+	./ufdbpeek secure.soligor.com
+	./ufdbpeek www.openca.org
+	./ufdbpeek www.verisign.com
+	./ufdbpeek apps.lotuslive.com
+	./ufdbpeek www.lotuslive.com
+
+
+t: ufdbGenTable
+	-ufdbGenTable -F 2.1 -DD -k abcdefghijklmnop -t test0t -d domains0.in -u urls0.in 2>domains0.stderr
+	cat domains0.stderr
+
+tcg: ufdbGenTable
+	MALLOC_ARENA_MAX=15 valgrind --tool=callgrind --collect-bus=yes --collect-systime=yes  \
+		--callgrind-out-file=gentable.cg.out \
+		./ufdbGenTable2 -n -q -F 2.0 -d domains3.in -u urls3.in
+	callgrind_annotate --tree=both gentable.cg.out  *.c > gentable.cg.report
+
+ts: ufdbGenTable
+	-ufdbGenTable -n -s -k abcdefghijklmnop -t test0t -d domains0.in -u urls0.in 2>domains0.stderr
+	cat domains0.stderr
+
+g0: ufdbGenTable
+	-valgrind  --partial-loads-ok=no  --verbose --track-fds=yes --tool=memcheck ufdbGenTable -n -k abcdefghijklmnop -t test0t -d domains0.in -u urls0.in 2>domains0.stderr
+	cat domains0.stderr
+
+g: ufdbGenTable
+	@echo "run -d domains0.in"
+	-$(MALLOC_DEBUG) ufdbGenTable 
+	cat domains0.stderr
+
+t1: ufdbGenTable
+	-$(MALLOC_DEBUG) ./ufdbGenTable -n -t t1 -d domains1.in -u urls1.in 2>domains1.stderr
+	cat domains1.stderr
+
+t2: ufdbGenTable
+	-$(MALLOC_DEBUG) ./ufdbGenTable -F 2.2 -n -t t2 -d domains2.in -u urls2.in 2>domains2.stderr
+	tail -20 domains2.stderr
+
+t3: ufdbGenTable
+	-/usr/bin/time ./ufdbGenTable -F 2.2 -q -n -t t3 -d domains3.in -u urls3.in 2>domains3.stderr
+	-gprof --brief ./ufdbGenTable > t3.prof
+	tail -20 domains3.stderr
+
+t3b: ufdbGenTable
+	-/usr/bin/time ./ufdbGenTable -F 2.0 -q -n -t t4 -d /tmp/ddd -u /tmp/uuu  2>domains3b.stderr
+	-gprof --brief ./ufdbGenTable > t3b.prof
+	tail -20 domains3b.stderr
+
+t3d: ufdbGenTable
+	echo run -F 2.0 -q -n -t t4 -d /tmp/ddd -u /tmp/uuu  
+	-gdb ./ufdbGenTable 
+
+optgt: genTable.c
+	rm -f genTable.o
+	CFLAGS="-O3 -minline-all-stringops -I/usr/include"  $(MAKE) -e genTable.o
+	 $(MAKE) ufdbGenTable.static
+
+	
+t3c: ufdbGenTable
+	-time ufdbGenTable -C -n -t t3 -d domains3.in -u urls3.in 2>domains3.stderr
+	tail -20 domains3.stderr
+
+t4: ufdbGenTable
+	-valgrind --verbose --freelist-vol=200000 --leak-resolution=med --partial-loads-ok=no --show-reachable=yes --leak-check=full --track-fds=yes --tool=memcheck ufdbGenTable -n -t vt3 -d domains3.in -u urls3.in 2>domains3.stderr
+	tail -20 domains3.stderr
+
+p: ufdbPrintTable
+	-time ufdbPrintTable domains0.in.ufdb
+
+pd: ufdbPrintTable
+	-ufdbPrintTable -d domains0.in.ufdb
+
+p0: ufdbPrintTable
+	-valgrind --verbose --freelist-vol=200000 --leak-resolution=med --partial-loads-ok=no --show-reachable=yes --leak-check=full --track-fds=yes --tool=memcheck ufdbPrintTable -d /tmp/domains.ufdb 
+
+pg: ufdbPrintTable
+	@echo "run domains0.in.ufdb"
+	-$(MALLOC_DEBUG) gdb ufdbPrintTable 
+
+p1: ufdbPrintTable
+	-$(MALLOC_DEBUG) ./ufdbPrintTable domains1.in.ufdb >print1.out
+	sort print1.out >ttt.p1
+	sort domains1.in urls1.in | uniq | tr '[A-Z]' '[a-z]' > ttt.in1
+	diff -C1 ttt.p1 ttt.in1
+
+p2: ufdbPrintTable
+	-$(MALLOC_DEBUG) time ./ufdbPrintTable domains2.in.ufdb >print2.out
+	sort print2.out >ttt.p2
+	sort domains2.in urls2.in | uniq | tr '[A-Z]' '[a-z]' > ttt.in2
+	diff -C1 ttt.p2 ttt.in2
+
+
+p3: ufdbPrintTable
+	-time ufdbPrintTable domains3.in.ufdb >print3.out
+	sort print3.out >ttt.p3
+	sort domains3.in urls3.in | uniq | tr '[A-Z]' '[a-z]' > ttt.in3
+	diff -C1 ttt.p3 ttt.in3
+
+p33: ufdbPrintTable
+	-rm -f gmon.out
+	-time ufdbPrintTable domains3.in.ufdb >print3.out
+	-gprof --brief ./ufdbPrintTable > p33.prof
+	tail -20 print3.out
+
+pa: ufdbPrintTable
+	-time ufdbPrintTable /local/squid/blacklists/adult/domains.ufdb >printa.out
+	tail -20 printa.out
+
+u00: ufdbGuard
+	-ufdbGuard -c ./ufdbGuard.conf < test2.in > u00.out 2>&1 
+
+u0: ufdbGuard
+	-echo "http://web64.trial.de 10.1.1.44/- - GET" | ufdbGuard  -c /local/squid/etc/ufdbGuard.conf
+
+u1: ufdbGuard
+#	-echo "http://www.reallynosex.com 10.1.1.44/- - GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+#	-echo "http://www.sexycompany.com 10.1.1.44/- - GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+	-echo "http://snarf.google.nl 10.1.1.44/- - GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+	-echo "http://www.google.nl 10.1.1.44/- - GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+	-echo "http://news.google.nl 10.1.1.44/pc-foo-bar-foor-bar-foor-bar.urlfilterdb.com john.doe GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+	-echo "http://fup.news.google.nl 10.1.1.44/- john.with-a-long-middle-name.doe/oursquiddomain GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+	-echo "http://chat.terra.com.br:3456/blah 10.1.1.44/- - GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+	-echo "http://web64.trial.de 10.1.1.44/- - GET" | ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf
+
+u2: ufdbGuard
+	-rm -f gmon.out
+	-./ufdbGuard  -d -c /local/squid/etc/ufdbGuard.conf < test2.in > u2.out 2>&1
+	-grep "time " u2.out
+	-gprof --brief ./ufdbGuard > u2.prof
+
+e1: ufdbGuard
+	-$(MALLOC_DEBUG) ufdbGuard -d -c /local/squid/etc/ufdbGuard.conf < e1.in > e1.out 2>&1
+	-grep "time " e1.out
+
+d2: ufdbGuard
+	@echo "run -d -c /local/squid/etc/ufdbGuard.conf < test2.in"
+	@echo "http://www.google.nl 10.1.1.44/- - GET" 
+	-$(MALLOC_DEBUG) gdb ufdbGuard
+
+d3: ufdbGuard
+	-rm -f gmon.out
+	-$(MALLOC_DEBUG) ufdbGuard -d -c /local/squid/etc/ufdbGuardP.conf < test2.in > d3.out 2>&1
+	-gprof --brief ufdbGuard > d3.prof
+	-grep "time " d3.out
+
+d4: ufdbGuard
+	-rm -f gmon.out
+	-ufdbGuard  -c /local/squid/etc/ufdbGuard.conf < 100000 > d4.out 2>&1
+	-gprof --brief ufdbGuard > d4.prof
+	-grep "time " d4.out
+
+v00: ufdbGuard
+	-valgrind --verbose --leak-check=full --show-reachable=yes --tool=memcheck ufdbGuard  -c /local/squid/etc/ufdbGuardV.conf < test2.in > v00.out 2>&1
+
+# --leak-check=full 
+v1: ufdbGuard
+	-valgrind --verbose --tool=memcheck ufdbGuard -d -c /local/squid/etc/ufdbGuardV.conf < test2.in > v1.out 2>&1
+	# -valgrind --verbose --tool=memcheck ufdbGuard -d -c sampleufdbGuard.conf < test2.in > v1.out 2>&1
+	-grep "time " v1.out
+
+v2: ufdbGenTable
+	-valgrind --verbose --track-fds=yes --tool=memcheck ufdbGenTable -t t1 -d domains1.in 2>v2.stderr
+
+v3: ufdbGuard
+	- ./ufdbGuard -d -c sampleufdbGuard.conf < test3.in > v3.out 2>&1
+
+perftest:
+	- ./ufdbGuard -c squidGuard.conf < 100000 > 100000.out 2>&1
+	-grep -e "ufdbGuard ready" -e "ufdbGuard stopped" -e " processed .* requests" ufdbGuard.log | tail -n 3
+
+
+	
+v3v: ufdbGuard
+	-valgrind --verbose --tool=memcheck --leak-check=full --show-reachable=yes ufdbGuard -d -c sampleufdbGuard.conf < test3v.in > v3v.out 2>&1
+
+v4: ufdbGuard
+	-ufdbGuard -d -c /local/squid/etc/ufdbGuardP.conf < test3.in > v4.out 2>&1
+
+DD=/local/squid/blacklists
+gt: ufdbGenTable
+	for class in always_allow always_deny \
+	             ads adult adult0 audio-video chat dating drugs entertain exceptions finance forum \
+	             gambling games illegal jobs mobile-phone news private proxies \
+		     shops sports travel violence warez webmail ; \
+	do \
+	   if [ $(DD)/$$class/domains.ufdb -ot $(DD)/$$class/domains  -o       \
+	        $(DD)/$$class/domains.ufdb -ot $(DD)/$$class/urls     ] ; then \
+	      echo $$class ... ; \
+	      ufdbGenTable -n -t $$class -d $(DD)/$$class/domains -u $(DD)/$$class/urls ; \
+	   fi ; \
+	done
+
+
+ccversion:
+	$(CC) --version
+
+g2953:
+	$(MAKE) clean 
+	CC=/usr/local/gcc/2.95.3/bin/gcc $(MAKE) -e $(MAKEFLAGS) ccversion all ufdbPrintTable
+
+g344:
+	$(MAKE) clean 
+	CC=/usr/local/gcc/3.4.4/bin/gcc $(MAKE) -e $(MAKEFLAGS) ccversion all ufdbPrintTable
+
+g401:
+	$(MAKE) clean 
+	CC=/usr/local/gcc/4.0.1/bin/gcc $(MAKE) -e $(MAKEFLAGS) ccversion all ufdbPrintTable
+
+g411:
+	$(MAKE) clean 
+	CC=/usr/local/gcc/4.1.1/bin/gcc $(MAKE) -e $(MAKEFLAGS) ccversion all ufdbPrintTable
+
+qinst:
+	/etc/init.d/squid stop
+	/etc/init.d/ufdb stop
+	$(MAKE) install
+	/etc/init.d/ufdb start
+	/etc/init.d/squid start
+
+cppsymbols:
+	$(CC) $(CFLAGS) -dM -E - < /dev/null  |   \
+	sort -k2
+	echo
+

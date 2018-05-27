@@ -1,0 +1,148 @@
+#!/sbin/sh
+
+# init.ufdbguard - init file for Solaris
+
+# By accepting this notice, you agree to be bound by the following
+# agreements:
+#  
+# This script is written by Yuri Voinov (C) 2007,2015
+# Modified by Marcus Kool, 2015, 2016
+# 
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License (version 2) as
+# published by the Free Software Foundation.  It is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+# PURPOSE.  See the GNU General Public License (GPL) for more details.
+#  
+# You should have received a copy of the GNU General Public License
+# (GPL) along with this program.
+
+#
+# Control Method for ufdbguard (/lib/svc/method/init.ufdbguard)
+#
+# ident "@(#)ufdbguard.sh    2.3    17/02/15 YV"
+#
+. /lib/svc/share/smf_include.sh
+. /lib/svc/share/net_include.sh
+
+#############
+# Variables #
+#############
+
+# PID file location
+PID_DIR="@ufdb_piddir@"
+# Default username to run daemon
+USERNAME="@ufdb_user@"
+# Threads to run. Leave blank to default (65)
+THREADS=""
+# TCP port tp listen. Leave blank to use UNIX sockets
+TCP_PORT=""
+
+#
+# OS Commands location variables
+#
+CAT=`which cat`
+CUT=`which cut`
+ECHO=`which echo`
+KILL=`which kill`
+RM=`which rm`
+UNAME=`which uname`
+
+# ufdbguard files paths
+UFDBGUARD_PATH="@ufdb_bindir@"
+# ufdbguard files
+UFDBGUARD_BIN_FILE="ufdbguardd"
+
+# OS release
+OS_VER=`$UNAME -r|$CUT -f2 -d"."`
+OS_NAME=`$UNAME -s|$CUT -f1 -d" "`
+
+###############
+# Subroutines #
+###############
+
+check_os ()
+{
+ # Check OS version
+ if [ ! "$OS_NAME" = "SunOS" -a ! "$OS_VER" -lt "10" ]; then
+  $ECHO "ERROR: Unsupported OS $OS_NAME $OS_VER"
+  $ECHO "Exiting..."
+  exit 1
+ fi
+}
+
+startproc()
+{
+# Start ufdbguard daemon
+ program=$1
+ 
+ if [ "x$THREADS" = "x" ]; then
+  WORKER_THREADS=""
+ else
+  WORKER_THREADS=" -w $THREADS"
+ fi
+
+ if [ "x$TCP_PORT" = "x" ]; then
+  PORT_LISTEN=""
+ else
+  PORT_LISTEN=" -p $TCP_PORT"
+ fi
+
+ $UFDBGUARD_PATH/$program -U $USERNAME $WORKER_THREADS $PORT_LISTEN
+}
+
+stopproc()
+{
+# Stop ufdbguard daemon
+ program=$1
+ $KILL -s TERM `$CAT $PID_DIR/$program.pid`
+ # The $RM commands should not be necessary
+ $RM -f $PID_DIR/$program.pid 
+ $RM -f /tmp/ufdbguardd-[0-9]*
+}
+
+refreshproc()
+{
+# Send HUP signal to daemon for re-read configuration
+ program=$1
+ $KILL -s HUP `$CAT $PID_DIR/$program.pid`
+}
+
+##############
+# Main block #
+##############
+
+# Check OS version
+check_os
+
+# Check daemon installed
+if [ ! -f "$UFDBGUARD_PATH/$UFDBGUARD_BIN_FILE" -a ! -x "$UFDBGUARD_PATH/$UFDBGUARD_BIN_FILE" ]; then
+ $ECHO "ERROR: ufdbguard not found!"
+ $ECHO "Exiting..."
+ exit 1
+fi
+
+##########################################################
+
+case "$1" in
+"refresh")
+  refreshproc $UFDBGUARD_BIN_FILE
+  ;;
+"restart")
+  stopproc $UFDBGUARD_BIN_FILE
+  startproc $UFDBGUARD_BIN_FILE
+  ;;
+"start")
+  startproc $UFDBGUARD_BIN_FILE
+  ;;
+"stop")
+  stopproc $UFDBGUARD_BIN_FILE
+  ;;
+*)
+  $ECHO "Usage: $0 { start | stop | restart | refresh }"
+  exit 1
+esac
+
+exit 0
+###

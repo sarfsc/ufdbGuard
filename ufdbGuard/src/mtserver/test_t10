@@ -1,0 +1,10 @@
+#!/bin/sh
+
+PORT=$1
+
+while read url
+do
+   echo "$url" 10.1.1.1/myhostname - GET
+done < ../u1  |
+   ./ufdbgclient  -l . -d -p "$PORT"
+

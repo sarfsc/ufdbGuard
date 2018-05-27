@@ -1,0 +1,133 @@
+#!@PERL@ -w
+#
+# ufdb_top_users.pl  -  retrieve top users from ufdbguardd.log
+#
+# WARNING: retrieval of top users is slow since large log files are processed.
+#          It may take 50 seconds to process 400 MB on a common server.
+#
+# $Id: ufdb_top_users.pl.in,v 1.2 2016/10/12 18:34:57 root Exp root $
+
+use Getopt::Long;
+
+my $dummy;
+my $debug = 0;
+my $need_help;
+my $logfilename;
+
+my $min_count = 2;
+my $report_size = 20;
+
+my $n_blocked = 0;
+my $n_passed = 0;
+
+my $process_passed = 1;
+my $process_blocked = 0;
+
+my %users;
+
+
+sub parse_logfile ($)
+{
+   my $fn = shift;
+   my $ldate;
+   my $ltime;
+   my $laction;
+   my $luser;
+   my $lcategory;
+   my $lurl;
+
+   print "logfile $fn\n"  if ($debug);
+
+   open IN, "< $fn"  or die "cannot open file \"$fn\": $!";
+   while (<IN>)
+   {
+      chomp;
+      @terms = split;
+      $laction = $terms[3];
+      if (defined($laction))
+      {
+	 $n_blocked++  if $laction eq 'BLOCK';
+	 $n_passed++   if $laction eq 'PASS';
+	 if (($laction eq 'PASS'  && $process_passed)  ||
+	     ($laction eq 'BLOCK' && $process_blocked))
+	 {
+	    $luser = $terms[4];
+	    $luser = 'anonymous'  if ($luser eq '-');
+	    if ($debug > 1) 
+	    {
+	       $ldate = $terms[0];
+	       $ltime = $terms[1];
+	       $lcategory = $terms[7];
+	       $lurl = $terms[8];
+	       $lurl =~ s,^http://,,;
+	       $lurl =~ s,[&\?].*,....,;
+	       printf "%s %s  %-14s  %-14s  %-5s  %s\n", $ldate, $ltime, $luser, $lcategory, $laction, $lurl;
+	    }
+
+	    $users{ $luser } ++;
+	 }
+      }
+   }
+   close IN;
+}
+
+
+sub print_topusers ()
+{
+   my $nlines;
+
+   printf "%d URLs: %d blocked, %d passed.\n", $n_blocked+$n_passed, $n_blocked, $n_passed;
+   if ($process_passed && $process_blocked)
+   {
+      printf "The top user list is based on blocked and passed URLs.\n";
+   }
+   elsif ($process_passed) 
+   {
+      printf "The top user list is based on only passed URLs.\n";
+   }
+   elsif ($process_blocked) 
+   {
+      printf "The top user list is based on only blocked URLs.\n";
+   }
+
+   printf "sorting...\n"  if $debug;
+
+   $nlines = 0;
+   foreach $key (sort { $users {$b} <=> $users {$a}} keys %users )
+   {
+      my $n = $users{$key};
+      last  if $n < $min_count;
+      printf "%7d  %s\n", $n, $key;
+      $nlines++;
+      last  if $nlines >= $report_size;
+   }
+}
+
+
+$dummy = GetOptions(
+		'help|?'         => \$need_help,
+		"debug"          => \$debug,
+		"report-size=i"  => \$report_size,
+		"count-passed!"  => \$process_passed,
+		"count-blocked!" => \$process_blocked );
+
+if ($process_passed == 0  &&  $process_blocked == 0)
+{
+   print "error: no-count-passed and no-count-blocked options imply that not one URL will be counted.\n";
+   exit 2;
+}
+
+if ($need_help  ||  !defined( $ARGV[0] ))
+{
+   print "usage: ufdb_top_users.pl [-[no-]count-passed] [-[no-]count-blocked] [-report-size=N] [-debug] <logfiles>\n";
+   print "defaults: count-passed, no-count-blocked, report-size=20\n";
+   exit 1;
+}
+
+foreach $logfilename (@ARGV)
+{
+   parse_logfile $logfilename;
+}
+print_topusers;
+
+exit 0;

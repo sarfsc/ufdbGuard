@@ -1,0 +1,6 @@
+#!/bin/sh
+
+grep -e SAFESEARCH: ufdblib.c |
+sed -e 's,.*SAFESEARCH: ,,' -e 's, *\*/,,' |
+sort > safesearch.list
+

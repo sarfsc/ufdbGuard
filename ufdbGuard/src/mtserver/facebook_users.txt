@@ -1,0 +1,4 @@
+root
+Administrator
+DOMAIN\Administrator
+adminanla2

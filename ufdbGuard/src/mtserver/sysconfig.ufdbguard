@@ -1,0 +1,53 @@
+#
+# /etc/sysconfig/ufdbguard
+#
+# $Id: sysconfig.ufdbguard.in,v 1.9 2016/06/24 13:30:39 root Exp root $
+
+# Request a trial license on www.urlfilterdb.com and you will
+# receive a username and password to download the URL database for URLfilterDB.
+# Until version 1.30 the following two parameters were set in ufdbUpdate:
+DOWNLOAD_USER=""
+DOWNLOAD_PASSWORD=""
+
+# If the download of the URL database must be done via a proxy,
+# set the following two parameters:
+PROXY_USER=""
+PROXY_PASSWORD=""
+# and probably also must set:
+# export http_proxy=
+# export https_proxy=
+
+# If non-empty, the following email address is used to notify URL database download failures
+ADMIN_EMAIL=""
+
+BLACKLIST_DIR="/local/squid/blacklists"
+CONFIGDIR="/local/ufdbguard/etc"
+BINDIR="/local/ufdbguard/bin"
+
+# Optional parameters
+# -T for test mode
+# -w NNN to increase the number of worker threads (max 140).
+# -U USERNAME  to switch from root to USERNAME
+# -c CONFIGFILE to read an alternate configuration file
+UFDB_OPTIONS=""
+export UFDB_OPTIONS
+
+# Optionally use a non-root account to run the ufdbguardd and ufdbhttpd daemons
+RUNAS="ufdb"
+export RUNAS
+
+# On some systems, regular expression matching is much faster with LANG=C
+LANG=C
+export LANG
+
+# On systems with glibc >= 2.10 the memory allocator (malloc) uses anonymous memory regions of 
+# 64 MB (1 mapped region per thread with a maximum of 8 * the number of CPU cores) on 64bit systems.
+# This is not harmful except that this method causes the process to have a huge virtual size:
+# The working set size is about 400 MB while the total virtual process size is almost 5 GB.
+#
+# Since ufdbguard is optimised to use many static buffers and uses malloc relatively
+# infrequently, it is possible to reduce the number of anonymous memory regions to 20.
+# With only 20 * 64MB, the total virtual size is approximately 1,25 GB.
+MALLOC_ARENA_MAX=20
+export MALLOC_ARENA_MAX
+

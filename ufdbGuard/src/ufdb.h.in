@@ -1,0 +1,616 @@
+/*
+ * ufdb.h - URLfilterDB
+ *
+ * ufdbGuard is copyrighted (C) 2005-2018 by URLfilterDB B.V. and others with all rights reserved.
+ *
+ * Parts of the ufdbGuard daemon are based on squidGuard.
+ * This module is NOT based on squidGuard.
+ *
+ * RCS $Id: ufdb.h.in,v 1.79 2018/03/18 19:01:17 root Exp root $
+ */
+
+/* 
+ * An ordered table looks like this:
+ *
+ * UNIVERSE
+ *         com 
+ *             foobar
+ *                    girls
+ *                    boys
+ *             pools
+ *             youtube
+ *		      /watch?v=id1	# parameter support is not yet implemented !
+ *		      /watch?v=id2
+ *		      /watch?v=idN
+ *             zazu
+ *         net 
+ *             zazu
+ *             zombie
+ *     
+ * The ordered table is implemented with a tree and each node in the tree
+ * has nNextLevels children.
+ *
+ * "UNIVERSE" 0xSUBLEVEL 
+ * "com" 0xSUBLEVEL "foobar"  0xSUBLEVEL  "girls" 0xSAMELEVEL 
+ *                                        "boys"  0xPREVLEVEL
+ *                  "pools"   0xSAMELEVEL
+ *                  "youtube" 0xSUBLEVEL  "/watch"   0xSUBLEVEL  "?"  0xSUBLEVEL  "v"  0xSUBLEVEL "id1"  0xSAMELEVEL
+ *											          "id2"  0xSAMELEVEL
+ *												  "idN"  0xPREVLEVEL
+ *			      0xPREVLEVEL            0xPREVLEVEL      0xPREVLEVEL      0xPREVLEVEL
+ *                  "zazu"    0xPREVLEVEL
+ * "net" 0xSUBLEVEL "zazu"    0xSAMELEVEL
+ *                  "zombie"  0xPREVLEVEL
+ *                  0xPREVLEVEL
+ * 0xENDTABLE
+ *
+ * The idea behind this is that the whole table can be loaded into 1 malloc-ed area
+ * and that the 0xXXXX tokens can be substitued by a '\0' in memory.
+ * The levelTag pointer will point into the table without malloc-ing memory which
+ * will save a lot on malloc overhead, memory and CPU time to load the table.
+ *
+ * The major drawback is that the number of children of a node is unknown when
+ * a table is loaded and the arrays of child nodes (nextLevel[]) must be reallocated
+ * many times.  This implies a relatively large malloc()/realloc() overhead.
+ *
+ * To get rid of the malloc() overhead, the number of child nodes (nNextLevels) is 
+ * coded into the file.  This is a new feature for database file format 1.2.
+ *
+ * 254034 lines
+ * 173984 nodes with 0 children
+ *  67779 nodes with 1 child
+ *   7762 nodes with 2 children
+ *   2075            3
+ *    772            4
+ */
+
+#ifndef UFDB_UFDB_H_INCLUDED
+#define UFDB_UFDB_H_INCLUDED
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef UFDB_NEED_FORTIFIED_CODE
+#undef _FORTIFY_SOURCE
+#endif
+
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
+
+/* on AIX systems we must define _ALL_SOURCE in order to get the symbol NI_NAMEREQD used by getnameinfo() */
+#ifdef _AIX
+#define _ALL_SOURCE 1
+#endif
+
+#ifndef _XOPEN_SOURCE
+#ifdef __sun
+#define _XOPEN_SOURCE 600
+#else
+#define _XOPEN_SOURCE 600
+#endif
+#endif
+
+#if __sun && !defined(__EXTENSIONS__)
+#define __EXTENSIONS__ 1
+#endif
+
+#if 0
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE  200112L
+#endif
+#endif
+
+#if 0
+#ifndef _XOPEN_SOURCE_EXTENDED
+#define _XOPEN_SOURCE_EXTENDED  1
+#endif
+#endif
+
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE 1
+#endif
+
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE 1
+#endif
+
+#ifndef UFDB_MALLOC_IS_THREADSAFE
+#define UFDB_MALLOC_IS_THREADSAFE 1
+#endif
+
+#define UFDB_DO_NOT_STRIP_FTP 1
+
+#include "config.h"
+#include "version.h"
+#include "ufdb-api-private.h"
+
+#define UFDB_VERSION "@PACKAGE_VERSION@"
+
+#ifndef UFDB_API_NO_THREADS
+#include <pthread.h>
+#endif
+
+#ifdef UFDB_DEBUG
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#ifdef PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
+#define UFDB_STATIC_MUTEX_INIT  PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
+#else
+#define UFDB_STATIC_MUTEX_INIT  PTHREAD_MUTEX_INITIALIZER
+#endif
+
+#else
+#define UFDB_STATIC_MUTEX_INIT  PTHREAD_MUTEX_INITIALIZER
+#endif
+
+#undef UFDB_64BITS
+#if defined(__x86_64__) || defined(__amd64__) || __SIZEOF_POINTER__ == 8
+#define UFDB_64BITS 1
+#endif
+
+#if defined(__GNUC__) && defined(__OPTIMIZE__)
+#define UFDB_GCC_INLINE __inline__
+#else
+#define UFDB_GCC_INLINE
+#endif
+
+#if defined(__GNUC__)
+#define UFDB_GCC_NORETURN  __attribute__ ((noreturn))
+#else
+#define UFDB_GCC_NORETURN
+#endif
+
+#if defined(__GNUC__)  
+/* malloc attribute exists since gcc 2.96 */
+#define UFDB_GCC_MALLOC_ATTR __attribute__ ((malloc))
+#else
+#define UFDB_GCC_MALLOC_ATTR /**/
+#endif
+
+#if defined(__GNUC__)  &&  ((__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)))
+#define UFDB_GCC_DEPRECATED __attribute__ ((deprecated))
+#define UFDB_GCC_ALIGN64    __attribute__ ((aligned(64)))
+#else
+#define UFDB_GCC_DEPRECATED /**/
+#define UFDB_GCC_ALIGN64    /**/
+#endif
+
+#if defined(UFDB_64BITS)  &&  defined(__GNUC__)  &&  ((__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)))
+#define UFDB_GCC_REGPARM1 __attribute__ ((regparm(1)))
+#define UFDB_GCC_REGPARM2 __attribute__ ((regparm(2)))
+#define UFDB_GCC_REGPARM3 __attribute__ ((regparm(3)))
+#else
+#define UFDB_GCC_REGPARM1 /**/
+#define UFDB_GCC_REGPARM2 /**/
+#define UFDB_GCC_REGPARM3 /**/
+#endif
+
+#if defined(__GNUC__)  &&  ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3)))
+#define UFDB_GCC_HOT        __attribute__ ((hot))
+#else
+#define UFDB_GCC_HOT        /**/
+#endif
+
+
+#if HAVE_VSPRINTF != 1
+#error The C library does not have the vsprintf function.
+#endif
+
+#if HAVE_STRERROR != 1
+#error The C library does not have the strerror function.
+#endif
+
+#if HAVE_REGCOMP != 1
+#error The C library does not have the regcomp function.
+#endif
+
+#if HAVE_SIGACTION != 1
+#error The C library does not have the sigaction function.
+#endif
+
+#define UFDB_USE_SSL 1
+
+
+#include <sys/types.h>
+#include <string.h>
+#include <limits.h>
+
+#ifdef UFDB_USE_PCREPOSIX
+#include <pcreposix.h>
+#else
+#include <regex.h>
+#endif
+
+#define UFDB_GDB_PATH	   "@GDB@"
+
+#define DEFAULT_DBHOME     "@ufdb_dbhome@"
+#define DEFAULT_IMAGESDIR  "@ufdb_images_dir@"
+#define DEFAULT_BINDIR     "@ufdb_bindir@"
+#define DEFAULT_PIDDIR     "@ufdb_piddir@"
+#define DEFAULT_LOGDIR     "@ufdb_logdir@"
+#define DEFAULT_LOGFILE    "ufdbGuard.log"
+#define DEFAULT_CONFIGFILE "@ufdb_config@/ufdbGuard.conf"
+
+#define UFDB_DEFAULT_SQUID_VERSION    	"3.5"
+#define UFDB_SQUID_HELPER_PROTOCOL1	0	/* 2.x         */
+#define UFDB_SQUID_HELPER_PROTOCOL2	1	/* 3.0 - 3.3   */
+#define UFDB_SQUID_HELPER_PROTOCOL3	2	/* 3.4 -       */
+
+#define UFDB_LICENSE_STATUS_FILENAME  	"license-status"
+
+#define UFDB_USER_AGENT	   		"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)"
+
+#define UFDB_ROTATE_LOG_FILES
+#define UFDB_MAX_INITIAL_LOGFILE_SIZE	(200*1024*1024)
+#define UFDB_MAX_LOGFILE_SIZE           (200*1024*1024)
+
+#define UFDB_DEFAULT_REFRESH_USERLIST	15	/* minutes */
+#define UFDB_DEFAULT_REFRESH_DOMAINLIST	15	/* minutes */
+
+#ifndef UFDB_UPLOAD_UNCATEGORISED_URLS_WEBSITE
+#define UFDB_UPLOAD_UNCATEGORISED_URLS_WEBSITE  "updates.urlfilterdb.com"
+#endif
+
+#ifndef UFDB_UPLOAD_UNCATEGORISED_URLS_CGI
+#define UFDB_UPLOAD_UNCATEGORISED_URLS_CGI      "/cgi-bin/uncat.pl"
+#endif
+
+#ifndef UFDB_UPLOAD_ANALYSE_SQUID_LOG_CGI
+#define UFDB_UPLOAD_ANALYSE_SQUID_LOG_CGI       "/cgi-bin/analyseSquidLog.pl"
+#endif
+
+#ifndef UFDB_EXPLAIN_DENY_REASON_URL
+#define UFDB_EXPLAIN_DENY_REASON_URL            "http://cgibin.urlfilterdb.com/cgi-bin/explain-denial.cgi"
+#endif
+
+#ifndef UFDB_DEFAULT_HTTPS_REDIRECTION_URL
+#define UFDB_DEFAULT_HTTPS_REDIRECTION_URL	"blockedhttps.urlfilterdb.com:443"
+#endif
+
+#ifndef UFDB_DEFAULT_BUMPED_HTTPS_REDIRECTION_URL
+#define UFDB_DEFAULT_BUMPED_HTTPS_REDIRECTION_URL	"https://blockedhttps.urlfilterdb.com/cgi-bin/URLblocked.cgi?clientgroup=%s&category=%t&url=%u"
+#endif
+
+#ifndef UFDB_DEFAULT_HTTP_RETURN_CODE
+#define UFDB_DEFAULT_HTTP_RETURN_CODE 		"302"		/* in the past HTTP/1.0 used "302" */
+#endif
+
+#define UFDB_NNODES_INDEX	2048
+
+#define UFDBGUARDD_PID_FILE     DEFAULT_PIDDIR "/ufdbguardd.pid"
+#define UFDBICAP_PID_FILE       "/var/run/urlfilterdb/icapd.pid"
+#define UFDB_USER               "@ufdb_user@"
+
+#define UFDB_USERQUOTA_SUPPORT  0
+
+/* support 20 instances of squid with each 64 ufdbgclient processes */
+#define UFDB_MAX_THREADS	(20*64+5)
+#define UFDB_DAEMON_PORT        3977
+
+/* ufdbgclient can support up to concurrency=N queries simultaneously */
+#define UFDB_MAX_SQUID_CONCURRENCY      32
+
+/* The HTTP 1.1 spec says that proxies must be able to handle requests 
+ * with a very long URI.  So what we will do is that ufdbgclient
+ * will support this and truncate the URL to have a maximum length
+ * of UFDB_MAX_URL_LENGTH.
+ */
+#define UFDB_HTTP_1_1_MAX_URI_LENGTH	65536
+#define UFDB_MAX_URL_LENGTH     8192
+
+#define UFDB_EVAL_OR	0
+#define UFDB_EVAL_AND	1
+
+
+void   ufdbFree( void * ptr );
+void * UFDB_GCC_MALLOC_ATTR ufdbMalloc( size_t n );
+void * UFDB_GCC_MALLOC_ATTR ufdbMallocAligned( int alignment, size_t n );
+void * ufdbRealloc( void * ptr, size_t n );
+void * ufdbCalloc( size_t n, size_t num );
+void   ufdbFreeAllMemory( void );
+
+void   ufdbGetMallocMutex( char * fn );
+void   ufdbReleaseMallocMutex( char * fn );
+
+char * ufdbStrdup( const char * s );
+
+int ufdbStrStrEnd( const char * s, const char * end );
+
+#define ufdbStrncpy( dest, src, n )   \
+	if (memccpy( (void *) (dest), (void *) (src), '\0', (size_t) (n) ) == NULL)  \
+	   (dest)[(n)-1] = '\0';
+
+#define UFDB_MAGIC_CATEGORY_IS_LOADED 0x62f87ce9
+
+#ifndef UFDB_MAX_TABLE_AGE
+#define UFDB_MAX_TABLE_AGE 28
+#endif
+
+#ifndef UFDB_WARN_TABLE_AGE
+#define UFDB_WARN_TABLE_AGE 4
+#endif
+
+
+typedef enum { UFDBdomain, UFDBurl } UFDBurlType;
+
+struct UFDBtable;
+
+struct UFDBtable
+{
+   unsigned char *     tag;
+   int                 nNextLevels;
+   struct UFDBtable *  nextLevel;
+};
+
+struct UFDBfileHeader
+{
+   char   string[99];  /* UFDB version category numEntries key */
+};
+
+struct UFDBfileHeader21
+{
+   char   string[256];  /* UFDB version category numEntries key */
+};
+
+struct UFDBfile
+{
+   struct UFDBfileHeader21 header;
+   struct UFDBtable        table;
+};
+
+
+struct UFDBmemTable
+{
+   void *              mem;
+   struct UFDBtable    table;
+   struct UFDBtable *  index;
+   int                 numEntries;
+   int		       indexSize;
+   int                 hdrSize;
+   int                 age;
+   long                fileSize;
+   char		       version[8];
+   char                flags[8];
+   char                key[16];
+   char                date[32];
+};
+
+typedef struct
+{
+   unsigned int x;
+   unsigned int y;
+   unsigned char state[256];
+} ufdbCrypt;
+
+void ufdbCryptInit(   ufdbCrypt * uc, const unsigned char * key, unsigned int keySize );
+void ufdbEncryptText( ufdbCrypt * uc, unsigned char * dest, const unsigned char * src, unsigned int len );
+
+/* space optimisation for database format 2.1: 
+ * ufdbsubLevel1 meaning "UFDBsubLevel with only one child"
+ * ufdbsubLevelNNN meaning "UFDBsubLevel with >255 children"
+ */
+#define UFDBsubLevel      '\001'		/* between 8 and 255 children */
+#define UFDBsameLevel     '\002'
+#define UFDBprevLevel     '\003'
+#define UFDBsubLevel1     '\004'		/* 1 child */
+#define UFDBsubLevel2     '\005'		/* 2 children */
+#define UFDBsubLevel3     '\006'		/* 3 children */
+#define UFDBsubLevel4     '\007'		/* 4 children */
+#define UFDBsubLevel5     '\010'		/* 5 children */
+#define UFDBsubLevel6     '\011'		/* 6 children */
+#define UFDBsubLevel7     '\012'		/* 7 children */
+#define UFDBsubLevelNNN   '\013'		/* until DB2.1: >255 children.  DB2.2: >255 && <65536 */
+#define UFDBsubLevelNNNNN '\014'		/* DB2.2: >65535 children */
+#define UFDBsubLevelIndexed '\015'		/* >UFDB_NNODES_INDEX children and index follows */
+#define UFDBendTable      '\020'
+#define UFDBpadTable      '\021'		/* skip padding bytes */
+
+#define UFDBmaxDomainNameLength 255
+#define UFDBmaxURLsize          512
+
+#define UFDBdefaultdbVersion  "2.2"
+#define UFDBdbVersion  "2.2"			/* max DB version */
+#define UFDBtableTag   "Kx61-tcZx-79qQ-nn2H-tqOf-aK1V"
+
+#define UFDBfileSuffix ".ufdb"
+
+#ifndef UFDB_REVURL_LABEL_SIZE
+#define UFDB_REVURL_LABEL_SIZE 256
+#endif
+
+/* when URL is www.mydomain.com/asubdir/index.html,
+ * urlPart is asubdir/index.html
+ */
+typedef unsigned char UFDBurlPart[UFDB_REVURL_LABEL_SIZE-8];
+
+struct UFDBrevURL_s;
+
+/* for optimal use of the CPU cache we want to have a struct of 256 bytes and pad it if necessary */
+typedef struct UFDBrevURL_s
+{
+   struct UFDBrevURL_s * next;
+   UFDBurlPart           part;
+#if defined(LONG_BIT)  &&  (LONG_BIT == 32)
+   char                  dummy[4];
+#endif
+} UFDBrevURL;
+
+#define MAX_REVURLS	 16
+
+typedef struct UFDBthreadAdmin_s
+{
+   int                   myArrayUsage[MAX_REVURLS];	/* 16*4 = 64 bytes */
+   UFDBrevURL            myArray[MAX_REVURLS];		/* 16*256 = 4096 bytes */
+} UFDBthreadAdmin;
+
+
+UFDBthreadAdmin * UFDBallocThreadAdmin( void );
+
+int ufdbguard_main( int argc, char ** argv, char ** envp );
+
+#define UFDB_ALLOW			0
+#define UFDB_DENY			1
+
+#define UFDB_GROUPTYPE_UNIX    		1
+#define UFDB_GROUPTYPE_LDAP    		2
+
+#define UFDB_ACL_ACCESS_BLOCK		0
+#define UFDB_ACL_ACCESS_ALLOW		1
+#define UFDB_ACL_ACCESS_DUNNO		2
+
+#define UFDB_API_STATUS_VIRGIN  	0
+#define UFDB_API_STATUS_STARTED_OK 	1
+#define UFDB_API_STATUS_TERMINATED	2
+#define UFDB_API_STATUS_RELOADING	3
+#define UFDB_API_STATUS_RELOAD_OK	4
+#define UFDB_API_STATUS_FATAL_ERROR	5
+#define UFDB_API_STATUS_ROLLING_LOGFILE	6
+#define UFDB_API_STATUS_UPDATE          7
+#define UFDB_API_STATUS_CRASH_REPORT_UPLOADED 8
+#define UFDB_API_STATUS_CRASH_REPORT_NOT_UPLOADED 9
+
+#define UFDB_API_STATUS_DATABASE_OK	   0
+#define UFDB_API_STATUS_DATABASE_OLD	   1
+#define UFDB_API_STATUS_DATABASE_EXPIRED   2
+
+#define UFDB_API_OK                        0
+#define UFDB_API_MATCH			   1
+#define UFDB_API_ERR_NULL                  2
+#define UFDB_API_ERR_NOFILE                3
+#define UFDB_API_ERR_READ                  4
+#define UFDB_API_ERR_EXPR                  5
+#define UFDB_API_ERR_RANGE                 6
+#define UFDB_API_ERR_ERRNO                 7
+#define UFDB_API_ERR_SOCKET                8
+#define UFDB_API_ERR_NOMEM                 9
+#define UFDB_API_REQ_QUEUED               10
+#define UFDB_API_ERR_TUNNEL               11
+#define UFDB_API_ERR_INVALID_CERT         12
+#define UFDB_API_ERR_IP_ADDRESS           13
+#define UFDB_API_ERR_OLD_TABLE            14
+#define UFDB_API_ERR_INVALID_TABLE        15
+#define UFDB_API_ERR_INVALID_KEY          16
+#define UFDB_API_ERR_IS_SKYPE		  17
+#define UFDB_API_ERR_FULL                 18
+#define UFDB_API_ERR_UNKNOWN_PROTOCOL     19
+#define UFDB_API_ERR_IS_GTALK		  20
+#define UFDB_API_ERR_IS_YAHOOMSG	  21
+#define UFDB_API_ERR_IS_AIM     	  22
+#define UFDB_API_ERR_IS_FBCHAT     	  23
+#define UFDB_API_ERR_IS_CITRIXONLINE   	  24
+#define UFDB_API_ERR_IS_ANYDESK   	  25
+#define UFDB_API_ERR_IS_TEAMVIEWER   	  26
+#define UFDB_API_ERR_CKSUM_NOT_VALID   	  27
+#define UFDB_API_ERR_OUTDATED             28
+#define UFDB_API_ERR_FATAL                29
+#define UFDB_API_ERR_TLS                  30
+#define UFDB_API_BEING_VERIFIED                  31
+#define UFDB_API_MODIFIED_FOR_SAFESEARCH         32
+#define UFDB_API_MODIFIED_FOR_YOUTUBE_EDUFILTER  33
+
+/* reasons why a URL is approved/blocked */
+#define UFDB_API_BLOCKR_PASS			0
+#define UFDB_API_BLOCKR_ACL			1
+#define UFDB_API_BLOCKR_ACL_NONE		2
+#define UFDB_API_BLOCKR_HTTPS_OPTION		3
+#define UFDB_API_BLOCKR_SKYPE			4
+#define UFDB_API_BLOCKR_SAFESEARCH		5
+#define UFDB_API_BLOCKR_LOADING_DB		6
+#define UFDB_API_BLOCKR_FATAL_ERROR		7
+#define UFDB_API_BLOCKR_CHECKED                 8
+#define UFDB_API_BLOCKR_YOUTUBE_EDUFILTER       9
+
+#define UFDB_API_ALLOW_QUEUING     	        1
+#define UFDB_API_VERBOSE_OUTPUT    	        2
+#define UFDB_OPT_HTTPS_WITH_HOSTNAME            4
+#define UFDB_OPT_HTTPS_OFFICAL_CERTIFICATE      8
+#define UFDB_OPT_SKYPE_OVER_HTTPS	       16
+#define UFDB_OPT_PROHIBIT_INSECURE_SSLV2       32
+#define UFDB_OPT_SAFE_SEARCH                   64
+#define UFDB_OPT_UNKNOWN_PROTOCOL_OVER_HTTPS  128
+#define UFDB_OPT_GTALK_OVER_HTTPS	      256
+#define UFDB_OPT_YAHOOMSG_OVER_HTTPS	      512
+#define UFDB_OPT_AIM_OVER_HTTPS	             1024
+#define UFDB_OPT_FBCHAT_OVER_HTTPS           2048
+#define UFDB_OPT_CITRIXONLINE_OVER_HTTPS     4096
+#define UFDB_OPT_YOUTUBE_EDUFILTER	     8192
+#define UFDB_OPT_ANYDESK_OVER_HTTPS	    16384
+#define UFDB_OPT_TEAMVIEWER_OVER_HTTPS	    32768
+#define UFDB_OPT_PROHIBIT_INSECURE_SSLV3    65536
+
+#define UFDB_API_HTTPS_CHECK_OFF           0
+#define UFDB_API_HTTPS_CHECK_QUEUE_CHECKS  1
+#define UFDB_API_HTTPS_CHECK_AGGRESSIVE    2
+#define UFDB_API_HTTPS_CHECK_AGRESSIVE     UFDB_API_HTTPS_CHECK_AGGRESSIVE
+#define UFDB_API_HTTPS_LOG_ONLY            3
+
+#define UFDB_ACL_NONE		0
+#define UFDB_ACL_WITHIN   	1
+#define UFDB_ACL_OUTSIDE   	2
+#define UFDB_ACL_ELSE   	3
+
+#define UFDB_PARAM_INIT		1
+#define UFDB_PARAM_ALARM	2
+
+#define UFDB_DEF_HTTPS_CONN_CACHE_SIZE     1000
+
+#if UFDB_API_NO_THREADS
+#define UFDB_NREGEX     1
+#elif UFDB_GEN_API
+#define UFDB_NREGEX     8
+#else
+#define UFDB_NREGEX     4       /* best performance when using 4 cores with 8 threads */
+#endif
+
+/* On Linux, regexec() uses a lock and is therefore not multithreaded.
+ * This is resolved by using multiple copies of compiled regex_t so 
+ * at most UFDB_NREGEX threads can work simultaneously.
+ */
+struct ufdbRegExp {
+   regex_t * compiled[UFDB_NREGEX];
+   int       error;
+   int       flags;
+   int       global;
+   char *    pattern;
+   char *    substitute;
+   char *    httpcode;
+   struct ufdbRegExp * next;
+#ifndef UFDB_API_NO_THREADS
+   int       next_nregex_i;
+   pthread_mutex_t  lock;
+#endif
+};
+
+struct ufdbRegExp * ufdbNewPatternBuffer( char * pattern, int flags );
+
+int ufdbRegExpMatch(   
+   struct ufdbRegExp * regexp, 
+   const char *        str );
+
+void ufdbSetSignalHandler( 
+   int signal, 
+   void (*handler)(int)  );
+
+int UFDBaddSafeSearch(
+   char * domain,
+   char * strippedURL,
+   char * originalURL  );
+
+int UFDBaddYoutubeEdufilter(
+   char * domain,
+   char * strippedURL,
+   char * originalURL  );
+
+void ufdbHandleAlarmForTimeEvents( int why );
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+

@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# check_gdb
+#
+# RCS $Id: check_gdb,v 1.1 2015/05/11 15:02:09 root Exp root $
+
+GDB="$1"
+
+if [ ! -x "$1" ]
+then
+   echo "The gdb command is not installed on this system.   *****"
+   echo "The gdb command is important to analyze an eventual crash of ufdbguardd."
+   echo "Although crashes of ufdbguardd happen very rarely, it is the output of gdb that enables finding the root cause of the crash"
+   echo "Install gdb and redo the configure and make procedure"
+fi
+

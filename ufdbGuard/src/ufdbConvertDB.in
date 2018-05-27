@@ -1,0 +1,126 @@
+#!/bin/sh
+#
+# ufdbConvertDB - convert flat files with domains and URLs to .ufdb table files
+#
+# This script converts an ASCII-based (flat file) URL database to the 
+# .ufdb table format that ufdbGuard uses.
+# This script only needs a top level directory and it traverses all subdirectories
+# searching for directories with domains and urls files.
+#
+# usage: ufdbConvertDB <top-level-directory>
+#
+# $Id: ufdbConvertDB.in,v 1.7 2016/10/20 18:56:08 root Exp root $
+
+# On Solaris the builtin test does not recognise the '-ot' operator
+# but /usr/bin/test does :-)
+if test -x /usr/bin/test
+then
+   TEST=/usr/bin/test
+elif test -x /bin/test
+then
+   TEST=/bin/test
+elif test -x /usr/local/bin/test
+then
+   TEST=/usr/local/bin/test
+else
+   # this fails on Solaris
+   TEST=test
+fi
+
+DEBUG=no
+if [ "$1" = -d ]
+then
+   DEBUG=yes
+   shift
+   echo "ufdbConvertDB version @VERSION@ is running:"
+   echo "ufdbConvertDB -d $*"
+fi
+
+TOPDIR="$1"
+
+if [ ! -d "$TOPDIR" ]
+then
+   echo "usage: ufdbConvertDB [-d] <top-level-directory>"
+   exit 1
+fi
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+BINDIR=@ufdb_bindir@
+PATH=$PATH:$BINDIR
+export PATH
+
+chkdirdb () {
+   dir="$1"
+   cd $dir
+
+   # echo "directory $dir " `pwd`
+   for tstd in *
+   do
+      if $TEST -d "$tstd" 
+      then
+	 echo "Searching directory $tstd for tables ..."
+	 chkdirdb "$tstd"
+      fi
+   done
+
+   if $TEST $DEBUG = yes 
+   then
+      gentableopt="-D"
+      # which ufdbGenTable
+   else
+      gentableopt="-q"
+   fi
+
+   if $TEST -f domains  -a  ! -f .notused
+   then
+      echo "found domains file in " `pwd` " ..."
+      if $TEST -f urls 
+      then
+	 echo "found urls file in " `pwd` " ..."
+	 if $TEST ! -f domains.ufdb  -o  domains.ufdb -ot domains  -o  domains.ufdb -ot urls
+	 then
+	    echo "generating .ufdb file: ufdbGenTable -n $gentableopt -Z -W -d domains -u urls"
+	    ufdbGenTable -n $gentableopt -Z -W -d domains -u urls
+	    retval=$?
+	    if $TEST $retval -ne 0 -o ! -s domains.ufdb
+	    then
+	       echo "ufdbGenTable had a non-standard exit code: $retval"
+	       echo "PATH = $PATH"
+	       echo "which ufdbGenTable:"
+	       which ufdbGenTable
+	       ufdbGenTable -V
+	    fi
+	 fi
+	 if $TEST $DEBUG = yes 
+	 then
+	    ls -l domains urls domains.ufdb
+	 fi
+      else
+	 if $TEST ! -f domains.ufdb  -o  domains.ufdb -ot domains 
+	 then
+	    echo "generating .ufdb file: ufdbGenTable -n $gentableopt -Z -W -d domains"
+	    ufdbGenTable -n $gentableopt -Z -W -d domains
+	    retval=$?
+	    if $TEST $retval -ne 0 -o ! -s domains.ufdb
+	    then
+	       echo "ufdbGenTable had a non-standard exit code: $retval"
+	       echo "PATH = $PATH"
+	       echo "which ufdbGenTable:"
+	       which ufdbGenTable
+	       ufdbGenTable -V
+	    fi
+	 fi
+	 if $TEST $DEBUG = yes
+	 then
+	    ls -l domains domains.ufdb
+	 fi
+      fi
+   fi
+
+   cd ..
+}
+
+chkdirdb "$TOPDIR"
+exit 0
+

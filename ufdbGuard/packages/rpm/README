@@ -1,0 +1,12 @@
+This directory contains all files to build Redhat/Fedora source and binary packages 
+for ufdbGuard, the URL filter for Squid.
+
+
+links:
+http://fedoraproject.org/wiki/How_to_create_an_RPM_package
+https://fedoraproject.org/wiki/Category:Package_Maintainers?rd=PackageMaintainers
+https://fedoraproject.org/wiki/Package_Review_Process
+https://fedoraproject.org/wiki/Join_the_package_collection_maintainers
+https://fedoraproject.org/wiki/How_to_create_a_GNU_Hello_RPM_package
+https://fedoraproject.org/wiki/How_to_create_an_RPM_package
+http://fedoraproject.org/wiki/Packaging:Guidelines

@@ -1,0 +1,28 @@
+#!/usr/bin/sh
+#
+# test_longurl
+
+PORT=${1:-8888}
+
+LREP=""
+REP="pathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpathpath"
+let i=0
+while [ $i -le 64 ]
+do
+   LREP="$LREP$REP"
+   let i=i+1
+done
+URL="http://www.urlfilterdb.com/foo.cgi/$LREP"
+# URL is 31+64*1200 bytes long
+
+# echo "$URL 10.9.9.9/ufdbgclient - GET" | ./ufdbgclient -p $PORT -l .
+
+http_port=10.7.0.1:3428         # Squid 4
+https_port=10.7.0.1:3428
+http_port=10.7.0.1:33130        # Squid 3.5
+https_port=10.7.0.1:33130
+export http_port https_port
+
+# wget -O longcontent "$URL"
+curl -o longcontent --proxy $http_port -v "$URL"
+

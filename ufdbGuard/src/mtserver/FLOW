@@ -1,0 +1,69 @@
+src = UFDBgetSourceList()
+while true do
+   src = UFDBfindSource( src, si )
+   acl = UFDBfindACLbySource( src, si )
+   decision = UFDBdecideAccessBasedOnURL( acl, si )
+   if decision == DUNNO
+      if localnet
+         if src.continue
+            void
+         else
+            decision = ALLOW
+      else
+         if lookup-reverse-ip
+            decision = UFDBdecideAccessBasedOnHostname()
+   if decision == DUNNO  &&  port == 443
+      if https-must-have-fqdn  &&  url-has-ip
+         decision = BLOCK
+      else
+         if (rv = UFDBsslPeekServer())
+            if rv.error  &&  https-official-cert
+               decision = BLOCK
+            elsif !rv.error  &&  url-has-ip  &&  rv.certName
+               decision = UFDBdecideAccessBasedOnHostname( rv.certName )
+         else if rv.certName
+            if rv.certName has "teamviewer.com"
+               if block-teamviewer
+                  decision = BLOCK
+               else
+                  decision = ALLOW
+   if decision == DUNNO  &&  port != 80  &&  !allow-bumped-connect
+      decision = UFDBdecideImplicitAccessBasedOnURL()
+   if decision == DUNNO  &&  src.continue
+      src = src->next
+      continue
+
+   if decision == ALLOW  and reason == SAFESEARCH
+      log-safesearch
+      write_answer_rewrite()
+      break
+   else if decision == DUNNO  ||  decision == ALLOW
+      if global-safesearch  &&  UFDBaddSafeSearch()                             # DUNNO / ALLOW(searchengine)
+         log-safesearch
+         write_answer_rewrite()
+         break
+      if (matchedAny  ||  decision == DUNNO)  && UFDBaddYoutubeEdufilter()      # DUNNO / ALLOW(youtube)
+         log-edufilter
+         write_answer_rewrite()
+         break
+      if log-all-requests  ||  log-pass
+         log-pass
+      if !reconfiguring  &&  !islocalnet  &&  (decision == DUNNO  || matchedAny  ||  matchedNone)
+         if !ufdbVerifyURLallCats()
+            ufdbRegisterUnknownURL()
+      break
+      if decision == DUNNO  &&  src->next
+         src = src->next
+         continue
+      else
+         write_answer_ok()
+         break
+   else
+      if (testMode)
+         log-test
+         write_answer_ok()
+      else
+         if log-all-requests  ||  log-block
+            log-block
+            write_answer_redir()
+         break

@@ -1,0 +1,40 @@
+.\" man page for ufdb_top_users
+.TH UFDB_TOP_USERS "1" "28/5/2018" "Release 1.33" "Release 1.33"
+.\"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+\fBufdb_top_users\fR \- retrieve the most frequent users from the log files
+.SH "SYNOPSIS"
+.HP 9
+\fBufdb_top_users\fR [\fIoptions\fR] \fB<logfiles>\fR
+.SH "DESCRIPTION"
+.PP
+\fBufdb_top_users\fR is a log analysis utility which
+scans one or more log files of ufdbguardd and prints
+the most frequent users.
+.PP
+The various options control which users are included in the report.
+.SH "OPTIONS"
+.TP
+\fB\-report-size <N>\fR
+specifies the number of lines of the report.
+The default is 20 lines.
+.TP
+\fB\-count-passed (default), -no-count-passed\fR
+specifies whether or not to include URLs that are PASSed.
+.TP
+\fB\-count-blocked, -no-count-blocked (default)\fR
+specifies whether or not to include URLs that are BLOCKed.
+.SH "WARNINGS"
+.PP
+Retrieval of top users is slow since (very) large log files are processed.
+It may take 50 seconds to process 400 MB on a common server.
+.SH "SEE ALSO"
+.PP
+ReferenceManual_1_33.pdf, 
+\fIhttp://www.urlfilterdb.com/en/downloads/documentation.html\fR.
+.SH "AUTHOR"
+The developers of URLfilterDB \- http://www.urlfilterdb.com

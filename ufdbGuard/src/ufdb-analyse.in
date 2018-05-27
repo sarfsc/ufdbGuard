@@ -1,0 +1,137 @@
+#!/bin/sh
+#
+# ufdb-analyse - analyse ufdbguard log file
+#
+# ufdb-analyse reads log files ufdbguardd.log[.<num>] and analyses them
+# to produce basic reports.
+#
+# The report types are:
+#	-topusers
+#	-topurls
+#	-analyse-user
+
+REPLOGDIR="@ufdb_logdir@"
+REPPRINTBLOCKED=1
+REPPRINTPASSED=0
+
+analyse_usage () {
+   echo "usage: ufdb-analyse <report-type>"
+   echo "where report-type is -topusers, -topurls or -analyse-user."
+   echo "-analyse-user must be followed by a valid username."
+   exit 1
+}
+
+if [ $# -le 1  -o  "$1" = "-h"  -o  "$1" = "-?" ]
+then
+   analyse_usage
+fi
+
+rtype="$1"
+case "$rtype" in
+   -topusers)
+      shift
+      REPTYPE="topusers" ;;
+   -topurls)
+      shift
+      REPTYPE="topurls" ;;
+   -analyse-user)
+      shift
+      REPTYPE="user" 
+      if [ $# -lt 1 ]
+      then
+         echo "no user specified"
+	 analyse_usage
+      fi
+      REPUSER="$1"
+      shift
+      ;;
+   *)
+      echo "unknown report type \"$rtype\""
+      analyse_usage ;;
+esac
+
+if [ "$1" = -logdir ]
+then
+   REPLOGDIR=$2
+   shift
+   shift
+   if [ ! -d "$REPLOGDIR" ]
+   then
+      echo "logdir: \"$REPLOGDIR\" is not a directory"
+      analyse_usage
+   fi
+fi
+export REPLOGDIR
+
+REPLOGFILES="$REPLOGDIR/ufdbguardd.log"
+
+if [ "$1" = "-all-logs" ]
+then
+   REPLOGFILES="$REPLOGDIR/ufdbguardd.log*"
+   shift
+fi
+
+if [ "$1" = "-logfiles" ]
+then
+   REPLOGFILES=""
+   for f in $2
+   do
+      REPLOGFILES="$REPLOGFILES $REPLOGDIR/$f"
+   done
+   shift
+   shift
+fi
+
+export REPLOGFILES
+
+if [ "$1" = -print-blocked ]
+then
+   REPPRINTBLOCKED=1
+   shift
+fi
+if [ "$1" = -no-print-blocked ]
+then
+   REPPRINTBLOCKED=0
+   shift
+fi
+
+if [ "$1" = -print-passed ]
+then
+   REPPRINTPASSED=1
+   shift
+fi
+if [ "$1" = -no-print-passed ]
+then
+   REPPRINTPASSED=0
+   shift
+fi
+
+export REPPRINTBLOCKED REPPRINTPASSED
+
+for f in $REPLOGFILES
+do
+   : echo "report log file $f"
+done
+
+
+case $REPTYPE in
+   user)
+      awk -v repuser="$REPUSER"  \
+	  -v reptype="$REPTYPE"  \
+	  -v printblocked="$REPPRINTBLOCKED"  \
+	  -v printpassed="$REPPRINTPASSED"  \
+	  -f ufdb_analyse_user.awk $REPLOGFILES
+      ;;
+   topusers)
+      awk -v repuser="$REPUSER"  \
+	  -v reptype="$REPTYPE"  \
+	  -v printblocked="$REPPRINTBLOCKED"  \
+	  -v printpassed="$REPPRINTPASSED"  \
+	  -f ufdb_top_users.awk $REPLOGFILES
+      ;;
+   topurls)
+      echo "not yet implemented"
+      ;;
+esac
+
+

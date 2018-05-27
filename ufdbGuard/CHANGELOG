@@ -1,0 +1,652 @@
+Release 1.0 - March 17 2005
+
+first release of ufdbGuard.
+Version 1.0 does 28,000 verifications/sec.
+
+
+Release 1.1 - May 2 2005
+
+ufdbGuard now also supports databases that are based upon URLs.
+So now it supports
+1) basic domain names (e.g. www.google.com)
+2) full URLs          (e.g. www.africaonline.com/news/index.htm)  (NEW)
+ufdbGenTable has an extra option (-u) to support this.
+
+ufdbGuard has a test mode that logs which URLs can be blocked but always
+sends a 'this URL is allowed' message to squid so nothing is blocked to
+users in test mode.  Use the -T option.
+
+The release procedure had a flaw to include a binary executable in the source
+distribution.  The executable is not included any more.
+
+ufdbGenTable assumed in 1.0 that all input files had lowercase domains/urls.
+Now it converts the input to lowercase to catch mistakes in the input files.
+
+There was still a dependency on db.h in sg.y and sgDiv.c that was removed.
+
+Fix a bug in sg.y where 1 byte memory was malloced too short for a string
+(this bug is from squidguard 1.2.0 sg.y line 965)
+
+Fix a bug where ufdbGuard crashed on URLs that are longer than 512 bytes.
+
+Always log 
+1) the number of requests that were processed
+2) the CPU times used to initialize and process all requests.
+
+Include the test directory in the release.
+This also prevents an error in the configure script.
+
+Fix buffer overflow error for input lines.
+Fix NULL pointer error in SgLogRequest().
+
+Support to build squidGuard and ufdbGuard from the same source has been dropped.
+
+Fix bug in URL parser where the port number was not stripped from the URL,
+i.e. chat.terra.com.br:3876/xxx was not categorised as "chat".
+
+
+Release 1.2  -  July 24 2005
+
+various optimisations in parseLine()
+
+The log file is rotated when the size exceeds 512 MB.
+A maximum of 10 log files are used.
+
+version 1.1 always logged the REDIRECTs in the log file.
+In version 1.2 the default is not to log them.
+Implemented -r option to log REDIRECTs.
+
+Encryption of tables implemented.
+All tools use the 1.2 table format that has encrypted data (the header is plain text).
+
+Compression of databases using bzip2 is implemented.
+
+Fix old-style perl in ufdbGuard.cgi
+
+The performance is now about 25,000 URL verifications/sec.
+
+
+Release 1.3  - September 21 2005
+
+Use larger I/O buffer to increase speed of generating a .ufdb table
+ufdbGenTable has new -q option to suppress warnings
+
+Make code of ufdbguard thread-safe.
+
+A new multithreaded ufdbguardd daemon is born.
+The daemon has only one copy of the database in memory and 
+16-64 worker threads.
+To perform a URL verification using the ufdbguardd daemon, the
+new lightweight program ufdbgclient can be used by squid as a 
+lightweight redirector.
+
+Warning: the ufdbguardd has a default number of 16 URL verification threads.
+Use the -w option to increase the number of threads.
+!!! Do *not* use more redirectors in squid than threads in the daemon.
+
+An API has been developed to use ufdbGuard code linked with 
+3rd party software (see src/api/apitest.c).
+
+fixed memory leak at reload of config file.
+
+Support processor affinity for the multithreaded daemon on Linux with
+a line like "cpus 2,3" in the configuration file.
+This enhances CPU cache efficiency and is recommended on all
+real multi-CPU machines.  Do not use it on a single hyperthreaded CPU.
+
+
+Release 1.4  - November 29 2005
+
+new functionality:
+re-introduced support for usernames and userlist in ACLs
+
+fixes:
+fixed database reload on receive of HUP signal for Linux 2.6
+and other OSes.
+
+fix for URL conversion: unicode characters < 0x20 and > 0x7f
+are not manipulated.  So in arabic countries regular expressions
+like google.*q=%d8%b3 can be used.
+
+fixed small memory leak for users with time-constranied ACLs
+
+removed compiler warnings on Solaris 9
+
+ufdbUpdate always works with valid username and password.
+
+
+Release 1.5  - December 7 2005
+
+fixes for the installation procedure: 
+install ufdbGuard.conf in correct directory (specified with --with-ufdb-config)
+preserve old user-configuration values in ufdbUpdate
+/etc/init.d/ufdb is updated with proper PATH for ufdbguardd binary
+
+Use send and receive timeouts on all socket communications (4 seconds)
+to prevent occasional hangs.
+
+
+Release 1.6  - December 29 2005
+
+ufdbguardd: queueing of file descriptors for worker threads re-implemented.
+improved socket error handling for ufdbguardd and ufdbgclient.
+improved socket I/O timeouts.
+
+
+Release 1.7  - January 9 2006
+
+Use ufdbguardd.pid file with main PID to send signals to
+minor URL parsing change: substitute any // inside a URL by /
+
+
+Release 1.8  - January 24 2006
+
+new -A option for ufdbguardd to analyse uncategorised URLs.
+Fix: stop all threads when 1 thread receives a fatal signal.
+Fix: extra dot at end of domainname caused incorrect lookup results.
+Fix: latin-1 characters in domain name lookups (i.e. dreimäderlhaus.at lookup is OK)
+Fix: hard-coded directory in config file caused 'make test' to fail if not used
+in /local/src/ufdbGuard-1.x.
+Fix: clear messages in log file when test mode is used.
+make install failed if . is not in the PATH
+
+
+Release 1.9  - September 12 2006
+
+Fix: rare message overflow in log function.
+Fix: better support for linux 2.2 and 2.4
+Fix: use ufdbguardd.pid in ufdbUpdate
+Enhancement: some fatal errors are also logged with syslog()
+Enhancement: new "administrator" keyword for inclusion in error message
+Enhancement: do not include hostnames without domainname in uncategorised URLs
+Enhancement: analyse-uncategorised-urls is ON by default
+Enhancement: sockets are closed with a 2 second linger
+Enhancement: the API is extended for categorisation of URLs
+
+
+Release 1.10  -  22 November 2006
+
+Fix: API test complained about not finding the toolbars database
+Fix: redirection URL can be prefixed with "302:" for backward compatibility with squidGuard.
+API change: to support proxy tunnel detection the API of UFDBstripURL() has been changed (see API HOWTO)
+Enhancement: NEW feature: proxy tunnels can be detected and blocked
+
+
+Release 1.11  -  4 December 2006
+
+Fix: new autoconf configuration for increased independency on platforms and better prereq checks
+
+
+Release 1.12  -  20 September 2007
+
+Fix: detected proxies were not blocked
+Fix: configure script checks for existence of wget
+Enhancement: increase security with options enforce-https-with-hostname and enforce-https-offical-certificate
+Enhancement: support ACLs based on unix groups
+Enhancement: keep log of blocked URLs (use "logblock on" in the config file).
+Enhancement: keep log of all URLs (use "logall on" in the config file).
+Enhancement: new option safe-search to enforce SafeSearch/AdultFilter features of search engines.
+Enhancement: also check port 563 for proxy tunnels
+Enhancement: check validity of dbhome parameter
+Enhancement: check for existence of a redirection statement
+Enhancement: logfile rotates when USR1 signal is received.
+Enhancement: ufdbGenTable warns for www. prefix
+Enhancement: ufdbUpdate has new -v option for initial testing with more feedback
+Enhancement: ufdbUpdate starts ufdbguardd if it is not running 
+Enhancement: support urlgroup in Squid 2.6
+Enhancement: redirector URL accepts color and size attributes
+
+
+Release 1.13  -  26 September 2007
+
+Fix: use mutex for older glibc libraries which have regexec which is not thread-safe
+Fix: use CRYPTO lock functions for SSL verifier
+Enhancement: use faster UNIX communication socket instead of IP socket when available.
+
+
+Release 1.14  -  28 November 2007
+
+Fix: 1 multithreading performance issue solved
+Fix: various small errors in FreeBSD and Solaris 9 & 10 ports
+Fix: SafeSearch for ask.com did not work always
+Fix: SafeSearch for video search on Yahoo did not work 
+Fix: if squid and ufdbguardd are run with different user ids, communication with ufdbguardd fails when UNIX sockets are used
+Fix: 2 multithreading issues in the HTTPS/SSL verification threads
+Fix: core dump when userlist is empty
+Fix: blocked websites using https get a proper error message instead of "The requested URL could not be retrieved"
+Enhancement: added new http daemon to serve redirection messages
+Enhancement: added new program to analyse a Squid log file and report usage of URL categories
+Enhancement: added Excite and dogpile.co.uk to list of SafeSearch search engines
+Enhancement: added new -U option to switch to another user ID (eliminates use of "su")
+Port: now also runs on Solaris 9, Solaris 10 and FreeBSD 6.2
+
+
+Release 1.14b   -  30 November 2007
+
+Fix: unintended SafeSearch for Ebay led to strange errors
+Fix: regular expression matching for URLs with ? did not work
+
+
+Release 1.15  -  23 June 2008
+
+Fix: safesearch for lycos.fr
+Fix: detect IP address obfuscations (numbers with leading zeroes)
+Fix: typo in parameter enforce-https-official-certificate
+Fix: ufdbGenTable can handle input files without a EOLN on the last line
+Fix: ufdbhttpd sometimes did not display an image when it should
+Enhancement: new webmin module is a GUI for the ufdbGuard configuration
+Enhancement: ufdbAnalyse can also parse Apache formatted logfile (with the new -a option)
+Enhancement: include Turkish error messages in ufdbhttpd
+Enhancement: ufdbhttpd also serves HTTP POST command and supports a new mode "simple-red"
+Enhancement: searchalot.com, alltheinternet.com, dly.net, busca.ya.com and buscamundo.com are added to the list of SafeSearch search engines
+Enhancement: api.search.yahoo.com is added to the list of SafeSearch search engines
+Enhancement: options enforce-https-with-hostname and enforce-https-official-certificate have now a parameter on|off
+Enhancement: special characters in URLs are parsed, e.g. %00 and &#09;
+Enhancement: ufdbGenTable converts special characters in URLs (e.g. %00 and %65)
+Enhancement: added -C option to ufdbgclient to support Squid's url_rewrite_concurrency parameter
+Enhancement: installation procedure gives feedback where the system start script is installed
+Enhancement: added -R option for RE matching debugging
+Enhancement: performance of agressive HTTPS protocol checks is improved
+
+
+Release 1.16  -  16 March 2009
+
+Fix: ufdbguardd and API crashed on very old tables
+Fix: prevent double checks with https certificate checking
+Enhancement: blinkx.com and webpile.it are added to the list of SafeSearch search engines
+
+
+Release 1.17  -  22 April 2009
+
+Enhancement: yauba.co.in is added to the list of SafeSearch search engines
+Fix: core dump more than one table with invalid date is loaded.
+Fix: remove 2 debugging lines in the log file (introduced in version 1.16)
+
+
+Release 1.18  -  2 July 2009
+
+Enhancement: block proxies based on webtunnel
+Enhancement: bing.com, forestle.org, foozir.com, muuler.com, ripple.org, zombol.com, easysearch.org.uk and zoower.com are added to the list of SafeSearch search engines
+Enhancement: improved readability of the log file
+Enhancement: much faster database load time on Solaris when libumem is used
+Enhancement: ufdbGenTable has a new option (-s) to apply sanity checks on URLs
+Enhancement: issue a warning when ufdbGenTable is required to run (i.e. domains is newer than domains.ufdb)
+Fix: safesearch for Google images fixed (URL changed)
+Fix: build on Solaris failed for ufdbgclient
+
+
+Release 1.19  - 9 December 2009
+
+Fix: prevent crash for users of the API (stack overwrite in UFDBstripURL)
+Fix: prevent crash in API when empty table is used
+Fix: ufdbGenTable fails silently when the input files are generated on Windows/DOS
+Fix: creation of a new URL category failed in webmin GUI
+Fix: setting path parameters failed in webmin GUI
+Fix: SSL certificate verification may fail when websites use intermediate certificates 
+Fix: ufdbhttpd shows messages with '%'
+Enhancement: support for URLs with IPv6 address (e.g. http://[1a92:36::7]/index.html)
+Enhancement: ufdbGenTable has new -W option to strip "www." from URLs
+Enhancement: add terra.com, terra.es, terra.cl etc. to the list of SafeSearch search engines
+Enhancement: apply SafeSearch enforcement to the new Google search API
+Enhancement: show more error details when SSL verification fails
+Enhancement: added Swedish for error messages
+Enhancement: faster HTTPS verification for sites with connection problems
+Enhancement: change header files of API to be used by C++ compilers
+Change: source code rearranged to release the API separately
+
+
+Release 1.20  -  20 April 2010
+
+Fix: bug introduced in v1.19 for HTTPS probing of certificates and proxies
+Fix: safesearch for bing stopped working and is fixed
+Fix: some URL obfuscations to circumvent filtering were allowed
+Fix: ufdbhttpd did not display correct images for blocked ads
+Fix: ufdbhttpd did not build on FreeBSD
+Fix: in rare cases the HTTPS verifier dies in SSL library calls
+Fix: the value of option enforce-https-official-certificate was ignored and always assumed to be "on"
+Enhancement: give clearer error message when the configuration file has non-ASCII characters
+Enhancement: add kalooga.com and api.search.live.net to the list of SafeSearch search engines
+Enhancement: logging is faster and the 'logall on' option can be used on high-volume URL filters
+
+
+Release 1.21  -  20 May 2010
+
+Fix: false SSL certificate validation errors appeared when the CA database could not be loaded
+Fix: false SSL certificate validation errors for extended validation certificates and certificate chains
+Enhancement: new security option https-prohibit-insecure-sslv2
+Enhancement: extended capacity for HTTPS verification 
+Enhancement: add yauba.com to the list of SafeSearch search engines
+API enhancement: new function UFDBaddSafeSearch()
+
+
+Release 1.22  -  21 June 2010
+
+Fix: random syntax errors appear when the size of the configuration file is more than 16 KB.
+Fix: on some systems ufdbguardd is aborted by glibc due to a double free when MALLOC_CHECK_>=2.
+Fix: ufdbguardd crashed when a URL database table could not be read due to a file permission
+Fix: compilation fails on systems where byacc is installed
+Fix: -N option was not recognised
+Enhancement: the SafeSearch option can also be used on a per-ACL basis
+Enhancement: ufdbConvertDB is a new utility to convert a flat file URL database to ufdbGuard file format
+Enhancement: ufdbAnalyse does a sanity check for the email address
+Enhancement: the maximum number of threads is increased to 128
+Enhancement: the configuration is included in the log file
+
+
+Release 1.23  -  September 9, 2010
+
+Fix: on some platforms ufdbguardd did not die gracefully when stopped with "/etc/init.d/ufdb stop"
+Port: ufdbguardd was ported to OpenBSD and Mac OS X
+Enhancement: support time-based ACLs
+Enhancement: the Skype VOIP application can be detected and allowed without disabling HTTPS security features
+Enhancement: performance improvement of 20% to 96% depending on which categories are used
+Enhancement: add duckduckgo.org, search-results.com and qbyrd.com to the list of SafeSearch search engines
+Enhancement: add new Google API to the list of SafeSearch search engines
+Enhancement: reserved words can be used for categories and sources when quoted
+Enhancement: short man pages
+Enhancement: ufdbGenTable: strip starting and trailing spaces from URLs
+Enhancement: ufdbhttpd: give more details on the error page
+
+
+Release 1.24 -  February 15, 2011
+
+Fix: generated redirect string was invalid if force_302 and no % in original redirect message
+Fix: when an undefined ACL has an "else" part ufdbguardd terminated
+Fix: on some systems ufdbConvertDB failed to call ufdbGenTable to generate .ufdb files
+Fix: no EOL or lines that end with a space in a userlist file causes crash or unexpected behaviour
+Enhancement: support monitoring by email and by command execution
+Enhancement: ufdbUpdate and ufdbguardd report on expiration of license
+Enhancement: ufdbUpdate has a defined set of exit codes
+Enhancement: configurable behaviour of the URL filter when it cannot perform URL lookups: allow all (default) or deny all.
+Enhancement: options for ufdbgclient to define redirection URL in case of a fatal error
+Enhancement: a new cacerts keyword allows the use of an alternate location of the CA certificates
+
+
+Release 1.25 - June 9, 2011
+
+Fix: SSH tunnel detection was sometimes skipped
+Fix: unknown protocols on HTTPS port 443 were always blocked, a new parameter controls 
+     the behaviour of ufdbguardd: block or allow (default)
+Fix: reset status of a SSL-based URL after a new configuration has been loaded
+Fix: set error status for monitor when ufdbguardd aborts at startup
+Fix: do not reset license status to unknown when the status is already known.
+Fix: missing #include caused compilation failure on BSD systems
+Change: a new URL category Social Networks is released.  
+Change: error messages are more compact for modes transparent and simple-red
+Enhancement: installation procedure updates configuration for new URL category "social networking"
+Enhancement: ufdbguardd now also detects the Google Talk, Yahoo IM and AIM applications
+Enhancement: the Reference Manual has a new section about blocking and allowing chat applications
+             and a section on how to gain performance on systems with many users 
+Enhancement: new parameter "interface" defines on which interface ufdbguard listens
+Enhancement: external status monitor has new -v option
+Enhancement: remove UNIX socket /tmp/ufdbguardd-[0-9][0-9][0-9][0-9][0-9] after /etc/init.d/ufdb kill or stop
+Enhancement: ufdbhttpd and URLblocked.cgi support more object types.  It makes browsing sometimes faster.
+Enhancement: ufdbGenTable supports new TLD .xxx
+Enhancement: add trovator.com, wotbox.com and yauba.com to the list of SafeSearch search engines
+Enhancement: support old pthread libs on FreeBSD 4.11
+
+
+Release 1.26 - June 22, 2011
+
+Fix: ufdbUpdate sometimes has a permission problem sending a signal to ufdbguardd
+Enhancement: ufdbUpdate -v now shows the URL database creation date
+
+
+Release 1.27 - November 3, 2011
+
+Enhancement: detection of facebook chat  
+Enhancement: ufdbAnalyse supports analysis of multiple log files
+Enhancement: Tor proxies on port 443 can be detected
+Enhancement: support for URL database format 2.1
+Fix: in rare cases ufdbguard ignores the alphabetically last domain of a URL category
+Fix: ufdbhttpd has improved guessing of Content-Type reducing problems with MSIE9 when blocking ads
+
+
+Release 1.28 - January 19, 2012
+
+Enhancement: Youtube edufilter support
+Enhancement: add blekko and izito to the list of SafeSearch search engines
+Enhancement: ufdbhttpd has a much faster restart time
+Fix: time-based ACLs were not always evaluated correctly
+Fix: ufdbguardd did not compile on BSD systems
+Fix: ufdbguardd crashed just after startup when duplicate time definitions were used
+Fix: ufdbguardd crashed on startup when debugging was turned on and browsers were active at the same time
+
+
+Release 1.29 - August 28, 2012
+
+Enhancement: much faster configuration reload time (in order of 5 seconds)
+Enhancement: support for the URL list of PhishTank
+Enhancement: new Google API and new Bing API added to the list of SafeSearch search engines
+Enhancement: duck.co and duckduckgo.com added to the list of SafeSearch search engines
+Enhancement: ufdbhttpd: blocked videos are blocked with a very short video instead of an empty binary stream
+Enhancement: CA certificates can be defined with a directory. new keyword: cacerts-dir
+Enhancement: detection of citrixonline over HTTPS
+Enhancement: new keyword "logpass" to log explicitly allowed URL categories
+Enhancement: ufdbGenTable is 15% faster when glibc is used
+Enhancement: new option strip-domain-from-username to match usernames sent by Squid with PAM usernames
+Enhancement: new option "-C verify" verifies a configuration file
+Enhancement: issue an understandable error when the keyword "aggressive" is used as a category identifier
+Fix: ufdbguardd can crash when it receives a URL with a very long domainname
+Fix: allow use of a default ACL rule without defining sources
+Fix: ufdbGenTable sometimes gave misleading warnings about www. in URLs
+Fix: ufdbGenTable interpreted URLs like www.example.com/foo?url=http://www.example2.com wrong
+Fix: URLs like www.example.com?a=0 sometimes gave erroneous results
+Fix: fix issue with '?' in URL for Google edufilter
+Fix: sometimes ufdbUpdate cannot send a HUP signal to ufdbguardd to reload the URL database
+Fix: sometimes time-based ACLs were not evaluated correctly
+Fix: ufdbhttpd sometimes hangs on URLs of sitestat.com
+Fix: the safesearch option caused errors for Google Insights
+Database: the URL category "External Applications" has a new subcategory "CitrixOnline"
+Database: the URL category "Social Networks" has subcategories Badoo, Facebook, GooglePlus and Twitter.
+Database: the CA certificates used by various security options are now also distributed with the software to
+	enable the use of security features without using a database from URLfilterDB.
+
+
+Release 1.30 - January 22, 2013
+
+Fix: remove race condition when calling ufdb-pstack
+Fix: ufdbguardd erroneously stated that an empty group did not exist.
+Fix: ufdbguardd sometimes crashed when issueing an error for a category being defined twice
+Fix: prevent crash on reload when a very large number of ACLs is used
+Enhancement: new keywords 'execuserlist' and 'refreshuserlist' enable easier integration with LDAP and other user databases
+Enhancement: aolsearch.com and search.aol.com are added to the list of SafeSearch search engines
+Enhancement: log number of URL lookups of which the URL was not in the URL database (uncategorised URL) 
+Enhancement: new option to log uncategorised URLs
+Enhancement: the ufdbConvertDB script generates errors with more details
+Enhancement: the install procedure uses LSB scripts or chkconfig if it exist to configure the startup script in /etc/init.d
+Enhancement: startup script in /etc/init.d removes old UNIX socket when ufdbguardd is started at system boot
+
+
+Release 1.31 - June 27, 2013
+
+Enhancement: a new toolset is available to analyse the ufdbguardd log files.
+The new commands are ufdb_analyse_urls and ufdb_analyse_users.
+Enhancement: a new keyword "execdomainlist" enables the use of a URL table that changes often without the need to reload the whole database.
+Enhancement: a new keyword "refreshdomainlist" defines how many minutes are in between successive updates of URL tables which have an "execdomainlist" property.
+Enhancement: the configure script has new option --with-ufdb-bindir, --with-ufdb-mandir and --with-ufdb-piddir
+Enhancement: pageset.com is added to the list of SafeSearch search engines
+Enhancement: ufdbUpdate script retrieves parameters from /etc/conf.d/ufdb and /etc/sysconfig/ufdbguard and therefore does not need to be edited any more.
+Enhancement: the log file contains new statistics about blocked categories and blocked sources.
+Enhancement: generate statistics every 48 hours when admin does not use ufdbUpdate every day
+Change: internal URL comparison algorithm does no longer strip a leading "ftp" from URLs
+Fix: blocked HTTPS sites are redirected to "blockedhttps.urlfilterdb.com:443" or to the value of the parameter "redirect-https" to solve issues with Squid
+Fix: sometimes ufdbguardd hangs when a very long uncategorised URL is used
+Fix: domains specified with the "domain" keyword were not matched
+Fix: a parallel build can be done (based on a patch from the Gentoo package maintainer)
+Documentation: the keyword "iplist" was not documented in the Reference Manual
+Database: The URL database of URLfilterDB contains a new URL category: "mozilla"
+which may be required for sites that use the Firefox browser from Mozilla.  
+The URL category "proxies" has a new subcategory "silk".  
+The URL category "external applications" has a new subcategory "icloud".
+
+Release 1.31 patches
+
+Fix a failure of "make install".
+Fix ufdbUpdate script which does not work if /etc/sysconfig does not exist.
+Fix crash when more than 10,000 expressions are used.
+Improve detection of Tor exit nodes.
+Prevent crash when very verbose debugging is used.
+ufdbguardd crashed when check-proxy-tunnels was set to "aggressive" and the URL database was reloaded
+Fix for a new bug that was introduced in v1.31: always print IP address of client in the log file.
+Prevent crash when a user-defined URL category is used where the last domain is a TLD.
+Youtube edufilter did not work when Squid sslBump is used
+Fix configuration file issue with ufdbUpdate on Ubuntu Linux.
+Remove a message about SSL connection setup from the logfile unless debugging is enabled.
+Make sure that ufdbUpdate has the correct exit code when wget fails
+Prevent crash when using debug level 2
+Use a hostname hint (TLS SNI) when probing HTTPS connections. This sometimes prevents incorrect blocking of HTTPS-based URLs.
+Enforce the correct directory permissions when the directory for the pid file is created. For all Linux systems where the /run file system has type tmpfs
+Resolve compiler warnings of gcc 4.8
+
+
+Release 1.32.1 - October 12, 2016
+
+Enhancement: New engine for HTTPS probing: do not probe known sites.
+Enhancement: increase HTTPS queue size from 800 to 1500.
+Enhancement: more content guessing in ufdbhttpd
+Enhancement: Skype SSL certificate for pipe.skype.com is detected
+Enhancement: ufdbgclient reconnects faster using last_failed_connect_time
+Enhancement: use zlib compression: up to 5 times faster than the default bzip2 compression.
+   This also implies that the URL database reload time is reduced.
+Enhancement: ufdbGenTable uses a new internal data structure and is 7 times faster for large URL tables.
+Enhancement: ufdbGuardd now issues errors in the log file when squid is configured to use helper concurrency but ufdbgclient does not have the -C option.
+Enhancement: new pseudo categories: "localnet" 
+Enhancement: ufdbGenTable recognizes many new TLDs
+Enhancement: ufdbUpdate can send email if it fails to download the URL database or fails to signal ufdbguardd.
+Enhancement: URL categories can now have a mix of IP and usernames.
+Enhancement: support ssl-bump with Squid 3.5.20 and higher
+   Squid 3.5.x needs squid.conf with
+   url_rewrite_extras "%>a/%>A %un %>rm bump_mode=%ssl::bump_mode sni=\"%ssl::>sni\" referer=\"%{Referer}>h\""
+Enhancement: crash reports are uploaded to URLfilterDB for fast bug fixing.
+   The option 'upload-crash-reports on|off' (default is on) controls if the crash report is uploaded.
+Enhancement: ufdbGuard can match and block URLs with parameters based on the value of a parameter or the existence of a parameter
+Enhancement: detect certificates of Anydesk.com and teamviewer (and new security options allow-teamviewer-over-https and allow-anydesk-over-https)
+Enhancement: uncategorised URLs are now stored in a faster hash table and referers are also kept there.
+Enhancement: ufdbhttpd has now support for POST
+Enhancement: ufdbhttpd has support for social-badges category
+Enhancement: new parameter: use-ipv6-on-wan (default: on) to enable IPv6 for connecting to all servers on the WAN (HTTPS probes and updates.urlfilterdb.com)
+Enhancement: the time and date specifications are more flexible and now also accepts "8:00" where previously only "08:00" was accepted. same for leading zeroes in dates.
+Enhancement: new parameter: pidfile
+Enhancement: new parameter: num-worker-threads
+Enhancement: new parameter: block-bumped-connect
+Enhancement: new parameter: evaluate-and
+Enhancement: new parameter: evaluate-or  (default)
+Enhancement: Added checks for fatal errors: mix of exec and non-exec userlists, more than one execuserlist
+Enhancement: Added check for error: category has no content definition
+Enhancement: increased performance when a source contains many usernames
+Enhancement: new security option https-prohibit-insecure-sslv3
+Enhancement: new keyword "sender-email"
+Enhancement: %C in the redirection URL shows all categories for the blocked URL.
+Enhancement: the results of execuserlist(command) are cached to prevent delays in environments where it may take a long time to produce the userlist.
+Fix: on some systems, when agressive HTTPS probing is used and the configuration is reloaded, the reload thread could not obtain a lock.
+Fix: ufdbUpdate always had exit status 0
+Fix: compilation failed on OSX
+Fix: fix syntax error in execuserlist.sh
+Fix: if the PIDDIR does not exist, ufdbguardd creates it, now also with the correct permissions.
+Fix: add protection against oversized labels inside FQDN
+Fix: emails by ufdbguardd have now a "Date:" header.
+Fix: ufdbGenTable stripped 'www.' from 'www.com' which caused all .com domains to match.
+Fix: count number of active workers and generate errors if this is higer than number of workers
+Fix: ufdbpeek crashed when logging very large messages (buffer overflow in ufdbLog)
+Fix: fix a few small memory leaks
+Fix: ufdbGenTable may produce corrupted URL tables if a domain contains '..'
+Fix: category with "option safesearch" blocked access 
+Change: removed -N option since this function is controlled by a configuration parameter
+Change: uncategorised URLs are now uploaded with HTTPS instead of HTTP.
+
+
+Release 1.32.2 - October 20, 2016
+
+This release caused some major problems and is revoked.
+
+Fix: when URL tables with parameters are used, ufdbGuard may not always find the URL in the URL table producing a false negative result
+Change: the default DB format of ufdbGenTable changed to 2.2
+
+
+Release 1.32.3 - October 21, 2016
+
+Some changes of 1.32.2 are reversed since the intended solution did not work well 
+for many users.  The issue remains that the database format "DB2.1" of ufdbGuard 1.32.x is
+incompatible with "DB2.1" of ufdbGuard 1.31.x but it is highly unlikely that users notice 
+this since ufdbGenTable of ufdbGuard 1.31.x uses DB2.0 as the default database format 
+and hence does not cause issues.
+
+Fix: URL tables with a parameter without value (e.g. example.com/cgi?foo=) caused a fatal error
+Fix: when URL tables with parameters are used, ufdbGuard may not always find the URL in the URL table producing a false negative result
+Change: the default DB format of ufdbGenTable changed to 2.2 and supports parameters in URLs
+Change: ufdbGenTable: do not accept URLs with parameters for database format 2.1
+
+
+Release 1.32.4 - December 13, 2016
+
+Fix: fix memory corruption and crash due to double free memory - this may happen when the database is reloaded
+Fix: ufdbHostnames.c did not compile on FreeBSD.
+Fix: clean install on FreeBSD
+Enhancement: ufdbGenTable has a stricter check for illegal characters in domainnames
+Change: URL parameters without an '=' are no longer logged as erroneous URLs
+Change: URL parameters with very long parameter values are no longer logged as erroneous URLs
+
+
+Release 1.33.1 - March 15, 2017
+
+Enhancement: IPv6 support for sources with new keywords ipv6 and ipv6list
+Enhancement: detect certificates of ucweb.com and uc.cn of the ucweb browser that circumvents URL filters
+Enhancement: ufdbgclient has new -m parameter to use multithreading and improve performance considerably
+Enhancement: make ufdbguardd.pid world-readable
+Enhancement: allow UTF8 characters in URLs
+Enhancement: new keyword ufdb-log-url-details controls if URLs in the log file have parameters or not
+Fix: for URL tables with over 2000 URLs and more than one URL with the same (sub)domain, ufdbGenTable may produce an incorrect URL table
+Fix: on the ARM platform generated URL tables were corrupt
+Fix: implicitly allowed URLs were logged with category "any" instead of the correct category ID
+Fix: prevent false positives with Tor proxy detection on port 443
+Fix: failed probes for <IP>:443 were not properly cached and resulted in too many probes for IP
+Fix: when reverse IP lookups are used, the URL category was not logged correctly (was logged as "any")
+Fix: ufdbGenTable uses less memory
+Fix: the feature "block-bumped-connect on" never blocked a CONNECT request
+
+
+Release 1.33.2 - April 14, 2017
+
+Fix: ufdbguardd may incorrectly abort with a fatal error cannot-get-rwlock-for-database-refresh-after-many-attempts
+Fix: safesearch did not work in 2 out of 3 cases
+Fix: ufdbguard did not compile on FreeBSD.
+Fix: crash due to stack overwrite in uploadStatistics/logStatistics
+Documentation: added use-ipv6-on-wan option to Reference Manual
+
+
+Release 1.33.3 - June 6, 2017
+
+Fix: ufdbgclient truncates Squid request lines to 8K which means that very long URLs cannot be filtered
+Fix: ufdbGenTable erroneously warned about URLs inside a comment
+Fix: make ufdbGuard compile on FreeBSD
+Fix: when evaluate-and IPv4/6 is used in a source definition, the source may not matched
+Fix: ufdbguardd did not accept the IPv6 address '::'
+Enhancement: several warnings for IPv4 and IPv6 addresses inside a source were implemented
+
+
+Release 1.33.4 - September 21, 2017
+
+Fix: URLs with very long domainnames may cause a crash if the URL is not in the URL database
+Fix: ufdbguardd did not obey 'continue' inside a source
+Fix: the logfile did not not contain "PASS URL" for all allowed URLs
+Fix: suppress another warning by ufdbGenTable if the -q option is used
+Fix: execuserlist with large arguments cannot be cached
+Fix: ufdbguardd sometimes does not use the correct source for its decision
+Fix: in-addr also matched URLs without an IP address
+Configuration: the option squid-uses-active-bumping was missing in the default configuration file
+
+
+Release 1.33.5 - April 19, 2018
+
+Fix: ufdbguardd may crash during a database refresh
+Fix: empty pass statements in acls may cause a crash.
+Fix: SSH tunnels were detected but access was not blocked
+Fix: sometimes the SSL/TLS certificate was not checked to be signed by a CA
+Fix: skip acls with "pass any" if the source has the continue flag set
+
+
+Release 1.33.6 - May 28, 2018
+
+Fix: ufdbguardd incorrectly blocked URLs that use HTTPS 
+
