@@ -7,7 +7,7 @@
  *
  * Multithreaded ufdbGuard daemon
  *
- * $Id: ufdbguardd.c,v 1.174 2018/05/25 13:19:06 root Exp root $
+ * $Id: ufdbguardd.c,v 1.175 2018/07/25 13:47:56 root Exp root $
  */
 
 #undef UFDB_FREE_MEMORY
@@ -685,7 +685,7 @@ static void catchAbortSignal( int signum )
 {
    badSignal = SIGABRT;
    badSignalHandlerBusy = 1;
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_ABORT;
    UFDBglobalTerminating = 1;
    (void) alarm( 0 );
 
@@ -719,14 +719,15 @@ static void TermSignalCaught( int signum )
 {
    if (UFDBglobalTerminating)
    {
-      UFDBglobalReconfig = 1;
       (void) alarm( 0 );
-      ufdbLogMessage( "received %s signal but I was already terminating  *****", signum == SIGINT ? "INT" : "TERM" );
+      ufdbLogMessage( "received %s signal but I was already terminating (reconfig=%d)  *****",
+                      signum == SIGINT ? "INT" : "TERM", UFDBglobalReconfig );
+      UFDBglobalReconfig = UFDB_RECONFIGR_TERM;
       return;
    }
 
    UFDBglobalTerminating = 1;
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_TERM;
    (void) alarm( 0 );
 
    ufdbLogMessage( "received %s signal", signum == SIGINT ? "INT" : "TERM" );
@@ -1021,7 +1022,7 @@ void __wrap___stack_chk_fail( void )
 {
    badSignalHandlerBusy = 1;
 #if 0
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_STACK;
    UFDBglobalTerminating = 1;
 #endif
    (void) alarm( 0 );
@@ -1038,7 +1039,7 @@ void __GI___fortify_fail( const char * msg )
 {
    badSignalHandlerBusy = 1;
 #if 0
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_FORTIFY;
    UFDBglobalTerminating = 1;
 #endif
    (void) alarm( 0 );
@@ -1055,7 +1056,7 @@ void __wrap___fortify_fail( const char * msg )
 {
    badSignalHandlerBusy = 1;
 #if 0
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_FORTIFY;
    UFDBglobalTerminating = 1;
 #endif
    (void) alarm( 0 );
@@ -1072,7 +1073,7 @@ void __wrap___assert_fail( const char * assertion, const char * file, unsigned i
 {
    badSignalHandlerBusy = 1;
 #if 0
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_FORTIFY;
    UFDBglobalTerminating = 1;
 #endif
    (void) alarm( 0 );
@@ -1094,7 +1095,7 @@ static void ufdbCatchBadSignal( int signum )
    {
       badSignalHandlerBusy = 1;
       badSignal = signum;
-      UFDBglobalReconfig = 1;
+      UFDBglobalReconfig = UFDB_RECONFIGR_BADSIG;
       UFDBglobalTerminating = 1;
       (void) alarm( 0 );
 
@@ -1157,8 +1158,8 @@ static void HupSignalCaught( int sig )
    /* going to reload the configuration but first wait for others to finish */
    while (UFDBglobalReconfig)
       usleep( 100000 );
+   UFDBglobalReconfig = UFDB_RECONFIGR_HUP;
 
-   UFDBglobalReconfig = 1;
    alarm( 0 );
 
    ufdbLogMessage( "HUP signal received to reload the configuration and database" );
@@ -1235,7 +1236,7 @@ static void HupSignalCaught( int sig )
       sleep( 1 );
    }
 
-#ifdef UFDB_HAVE_NATIVE_RWLOCK_MUTEX
+#if UFDB_HAVE_NATIVE_RWLOCK_MUTEX
 
 #if 0
    /* Inside a virtual machine, sometimes pthread_rwlock_timedwrlock fails.
@@ -1252,7 +1253,7 @@ static void HupSignalCaught( int sig )
 
    /* 
     * Synchronise with all worker threads.
-    * UFDBglobalReconfig is set for the last 1.5-10 seconds so the worker threads have 
+    * UFDBglobalReconfig is set for the last 1.5-11 seconds so the worker threads have 
     * most likely no read-locks any more.  Try to get a write lock within 0.3 seconds
     * and if this fails, we will sleep 5 seconds more and acquire the rwlock with
     * pthread_rwlock_wrlock().
@@ -1284,7 +1285,7 @@ static void HupSignalCaught( int sig )
       else 
 	 ufdbLogError( "pthread_rwlock_timedwrlock failed with code %d  *****", ret );
 
-      sleep( 5 );
+      sleep( 1 );
       ufdbLogMessage( "requesting a write lock for the in-memory database (slow mode)..." );
 
       /* 
@@ -1294,13 +1295,16 @@ static void HupSignalCaught( int sig )
        * This state is not desirable since "reload mode" either does not filter or blocks all access
        * so the time to reload a configuration should always be as short as possible.
        */
-      DatabaseLockTimeout.tv_sec = 3;
+      DatabaseLockTimeout.tv_sec  = 60;
       DatabaseLockTimeout.tv_nsec = 0;
       ret = pthread_rwlock_timedwrlock( &TheDatabaseLock, &DatabaseLockTimeout );
       if (ret == 0)
 	 ufdbLogMessage( "lock acquired to reload the configuration and URL database" );
       else
       {
+         if (ret == EDEADLK)
+            ufdbLogFatalError( "HupSignalCaught: deadlock detected trying to acquire database write lock" );
+         else
 	 if (ret == ETIMEDOUT  ||  ret == EBUSY)
 	 {
 	    ufdbLogError( "HUP signal received but could not acquire a lock on the configuration  *****\n"
@@ -1310,59 +1314,32 @@ static void HupSignalCaught( int sig )
 			  "On virtual machines, verify that the virtual machine has sufficient resources.\n"
 			  "Request support from the Support Desk of www.urlfilterdb.com "
                           "in case there are any doubts." );
-	    if (UFDBglobalDebug)
-	       ufdbExecutePstack( "debug-cannot-get-rwlock-in-8-seconds" );
+            ufdbExecutePstack( "debug-cannot-get-rwlock-in-60-seconds" );
 	 }
 	 else
 	    ufdbLogError( "pthread_rwlock_wrlock failed with code %d  *****", ret );
 
-	 /*
-	  * I am in trouble.  Obtaining the lock has failed, but without it, there is a certain crash to come...
-	  * So try again...
-	  */
-	 ufdbLogMessage( "trying again to get the database lock (repetitive mode)" );
-	 {
-	    int i;
-	    for (i = 0; i < MAX_RWLOCK_ATTEMPTS; i++)
-	    {
-	       sleep( 1 );
-	       DatabaseLockTimeout.tv_sec = 0;
-               if (i >= MAX_RWLOCK_ATTEMPTS - 2)
-                  DatabaseLockTimeout.tv_sec = 30;
-	       DatabaseLockTimeout.tv_nsec = 400000000;
-	       ret = pthread_rwlock_timedwrlock( &TheDatabaseLock, &DatabaseLockTimeout );
-	       if (ret == 0)
-	       {
-		  ufdbLogMessage( "finally got the database lock after %d additional attempts !", i );
-	          goto lock_was_acquired;
-	       }
-	       if (ret == ETIMEDOUT  ||  ret == EBUSY)
-	          sleep( 1 );
-	       else
-	       {
-		  ufdbLogError( "HupSignalCaught: pthread_rwlock_timedwrlock returned error code %d  *****",
-                                ret );
-	          break;
-	       }
-	    }
-	    ufdbLogError( "HupSignalCaught: cannot obtain a write lock for the database.   *****\n"
-                          "The most common cause is a (virtual) machine with not enough resources." );
-	    /*
-	     * We have two choices here:
-	     * 1) raise SIGABRT since we cannot reload the configuration,
-	     * 2) forget SIGHUP and not reload the configuration.
-	     * Both options are not very desirable, but option 2 is a bit more friendly for the end users.
-	     */
-	    ufdbExecutePstack( "cannot-get-rwlock-for-database-refresh-after-many-attempts" );
-	    ufdbHandleAlarmForTimeEvents( UFDB_PARAM_INIT );
-	    UFDBchangeStatus( UFDB_API_STATUS_FATAL_ERROR );
-	    UFDBglobalReconfig = 0;
-	    return;
-	 }
+         /*
+          * We have two choices here:
+          * 1) raise SIGABRT since we cannot reload the configuration,
+          * 2) forget SIGHUP and not reload the configuration.
+          * Both options are not very desirable, but option 2 is a bit more friendly for the end users.
+          */
+         if (ret != ETIMEDOUT  &&  ret != EBUSY)
+            ufdbExecutePstack( "cannot-get-rwlock-for-database-refresh-after-many-attempts" );
+         ufdbHandleAlarmForTimeEvents( UFDB_PARAM_INIT );
+         UFDBchangeStatus( UFDB_API_STATUS_FATAL_ERROR );
+         if (ret == EDEADLK)
+         {
+            ufdbLogFatalError( "must terminate because of a fatal deadlock" );
+            exit( 9 );
+         }
+         UFDBglobalReconfig = UFDB_RECONFIGR_NONE;
+         return;
       }
    }
 
-lock_was_acquired:
+// lock_was_acquired:
    /* 
     * It was believed that the rwlock must be released ASAP but it not the case.
     * the lock will be relased after all processing has been terminated.
@@ -1374,19 +1351,18 @@ lock_was_acquired:
     * but it allows us not to use mutexes for a many-reader-one-writer problem.
     */
    sleep_period = UFDBglobalNworkers / 3;
-   if (sleep_period < 15)
-      sleep_period = 15;
-   if (sleep_period > 50)
-      sleep_period = 50;
-   sleep_period -= 3;		/* we already slept a few seconds */
+   if (sleep_period < 30)
+      sleep_period = 30;
+   if (sleep_period > 80)
+      sleep_period = 80;
    if (UFDBgetTunnelCheckMethod() == UFDB_API_HTTPS_CHECK_AGGRESSIVE)
       sleep_period += 15;
-   ufdbLogMessage( "sleeping %d seconds to allow worker threads to finish current work", 
-		   sleep_period );
+   ufdbLogMessage( "sleeping %d seconds to allow worker threads to finish current work", sleep_period );
    sleep( sleep_period );		
+   ret = -1;
 #endif
 
-   UFDBglobalReconfig = 2;
+   UFDBglobalReconfig = UFDB_RECONFIGR_RELOAD;
 
    /* TODO: reload CA certificates */
    /* TODO: clear security cache */
@@ -1398,18 +1374,20 @@ lock_was_acquired:
    UFDBglobalHttpdPort = 0;
    if (sgReadConfig( configFile ) == 0)
    {
-      UFDBglobalReconfig = 3;
+      UFDBglobalReconfig = UFDB_RECONFIGR_FATAL;
       ufdbLogFatalError( "exiting due to missing configuration file" );
       exit( 3 );
    }
    if (UFDBglobalTerminating)
    {
       ufdbLogMessage( "HupSignalCaught: a fatal error occurred and ufdbguardd is terminating  *****" );
+#if UFDB_HAVE_NATIVE_RWLOCK_MUTEX
       if (ret == 0)
       {
          ufdbLogMessage( "releasing the rwlock" );
          (void) pthread_rwlock_unlock( &TheDatabaseLock );
       }
+#endif
       return;
    }
    if (UFDBglobalFatalError)
@@ -1489,17 +1467,21 @@ lock_was_acquired:
    else
       ufdbLogMessage( "the new configuration and database are loaded for ufdbguardd " UFDB_VERSION );
 
+   UFDBglobalReconfig = UFDB_RECONFIGR_NONE;
+#if UFDB_HAVE_NATIVE_RWLOCK_MUTEX
    ufdbLogMessage( "releasing the rwlock" );
-   UFDBglobalReconfig = 0;
    if (ret == 0)
    {
       (void) pthread_rwlock_unlock( &TheDatabaseLock );
    }
+#endif
 
    pthread_mutex_unlock( &sighup_mutex );
 
+#if 0
    pthread_kill( dyn_userlist_handler, SIGHUP );
    pthread_kill( dyn_domainlist_handler, SIGHUP );
+#endif
 }
 
 
@@ -1857,7 +1839,7 @@ void * socket_handler_thread( void * ptr )
    struct sockaddr_un  addr_un;
 #endif
 
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_INIT;
 
    /* Most signals must be blocked.
     * This is a requirement to use sigwait() in a thread.
@@ -1882,16 +1864,6 @@ void * socket_handler_thread( void * ptr )
    globalArgv = my_argv;
    globalEnvp = my_envp;
 
-   /* Now is the right moment to write out main PID to the pid file.
-    * Note that systemd monitors the creation of the PID file.
-    */
-   if (writePidFile() == 0)
-   {
-      ufdbLogError( "make sure that %s exists and has the correct permissions", DEFAULT_PIDDIR );
-      ufdbLogFatalError( "cannot write my PID to the pidfile (see previous lines)" );
-   }
-   atexit( removePidFile );
-
    /* ufdbSetGlobalErrorLogFile( 0 ); */
    ufdbResetUnknownURLs();
    UFDBglobalFatalError = 0;
@@ -1903,6 +1875,16 @@ void * socket_handler_thread( void * ptr )
       UFDBchangeStatus( UFDB_API_STATUS_FATAL_ERROR );
       exit( 3 );
    }
+
+   /* Now is the right moment to write out main PID to the pid file.
+    * Note that systemd monitors the creation of the PID file.
+    */
+   if (writePidFile() == 0)
+   {
+      ufdbLogError( "make sure that %s exists and has the correct permissions", DEFAULT_PIDDIR );
+      ufdbLogFatalError( "cannot write my PID to the pidfile (see previous lines)" );
+   }
+   atexit( removePidFile );
 
    /* ufdbSetGlobalErrorLogFile( 0 ); */
    if (UFDBglobalDebug)
@@ -2153,7 +2135,7 @@ void * socket_handler_thread( void * ptr )
 
    /* let the other threads finish their initialisation before we accept connections */
    usleep( 200000 );
-   UFDBglobalReconfig = 0;
+   UFDBglobalReconfig = UFDB_RECONFIGR_NONE;
 
    daemon_accept_connections( s, protocol );
 
@@ -2529,7 +2511,7 @@ static int write_answer_redir(
 
    /* NOTE: the optional channel ID is dealt with by ufdbgclient */
 
-   if (UFDBglobalSquidHelperProtocol == UFDB_SQUID_HELPER_PROTOCOL3)
+   if (UFDBglobalSquidHelperProtocol == UFDB_SQUID_HELPER_PROTOCOL3)    /* Squid 3.4+ */
    {
       if (si->blockReason == UFDB_API_BLOCKR_SAFESEARCH  ||
           si->blockReason == UFDB_API_BLOCKR_YOUTUBE_EDUFILTER)
@@ -2549,7 +2531,7 @@ static int write_answer_redir(
       {
 	 if (strcmp( si->method, "CONNECT" ) == 0)
          {
-	    /* must force rewrite for HTTPS to make Squid reconnect */
+            /* must force rewrite for bumped HTTPS to make Squid reconnect */
             if (si->channelid[0] == '\0')
                replyLen = sprintf( replyBuf, "OK rewrite-url=\"%s\"\n", URL );             
             else
@@ -2566,14 +2548,14 @@ static int write_answer_redir(
          }
       }
    }
-   else if (UFDBglobalSquidHelperProtocol == UFDB_SQUID_HELPER_PROTOCOL2)
+   else if (UFDBglobalSquidHelperProtocol == UFDB_SQUID_HELPER_PROTOCOL2)       /* Squid 3.0 - 3.3 */
    {
       if (si->channelid[0] == '\0')
          replyLen = sprintf( replyBuf, "%s\n", URL );
       else
          replyLen = sprintf( replyBuf, "%s %s\n", si->channelid, URL );
    }
-   else
+   else                                                                         /* Squid 2.x */
    {
       if (si->channelid[0] == '\0')
          replyLen = sprintf( replyBuf, "%s %s/%s %s %s\n", 
@@ -2680,6 +2662,8 @@ static void * worker_main( void * ptr )
       squidInfo.aclpass = NULL;
       squidInfo.referer[0] = '\0';
       squidInfo.ident[0] = '\0';
+      squidInfo.domain[0] = '\0';
+      squidInfo.orig_domain[0] = '\0';
       squidInfo.worker = tnum;
 
       pthread_testcancel();
@@ -2792,7 +2776,7 @@ static void * worker_main( void * ptr )
 
 	 src = NULL;
 
-	 if (reconfiguring == 0)
+	 if (reconfiguring == UFDB_RECONFIGR_NONE)
 	 {
 	    UFDBregisterCountedIP( squidInfo.srcIP );
 	    UFDBregisterCountedUser( squidInfo.ident );
@@ -2813,7 +2797,7 @@ static void * worker_main( void * ptr )
                char errstr[128];
 
 	       ufdbLogFatalError( "W%03d: pthread_rwlock_rdlock failed with code %d", tnum, ret );
-               UFDBglobalReconfig = 1;
+               UFDBglobalReconfig = UFDB_RECONFIGR_FATAL;
                UFDBglobalTerminating = 1;
                (void) alarm( 0 );
                badSignal = SIGABRT;
@@ -2824,8 +2808,8 @@ static void * worker_main( void * ptr )
             }
             if (UFDBglobalReconfig)
             {
+               reconfiguring = UFDBglobalReconfig;
                (void) pthread_rwlock_unlock( &TheDatabaseLock );          /* ====== */
-               reconfiguring = 1;
                lock_used = 0;
                src = NULL;
             }
@@ -2929,7 +2913,8 @@ do_next_src:
 	       }
 	       else
 	       {
-                  if (!reconfiguring  &&  isconnect  &&  UFDBglobalTunnelCheckMethod != UFDB_API_HTTPS_CHECK_OFF)
+                  if (reconfiguring == UFDB_RECONFIGR_NONE  &&  UFDBglobalReconfig == UFDB_RECONFIGR_NONE  &&
+                      isconnect  &&  UFDBglobalTunnelCheckMethod != UFDB_API_HTTPS_CHECK_OFF)
                   {
                      char * content;
                      int    certErrors;
@@ -3285,7 +3270,9 @@ do_next_src:
 		  if (redirect[0] == '\0')
                   {
                      if (isconnect)
-                        redirect = UFDBglobalRedirectHttps;
+                        strcpy( redirect, UFDBglobalRedirectHttps );
+                     else if (squidInfo.port == 443)
+                        strcpy( redirect, UFDBglobalRedirectBumpedHttps );
                      else
                         strcpy( redirect, "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
                                           "category=%t&url=%u" );
@@ -3326,8 +3313,8 @@ do_next_src:
             {
                char errstr[128];
 
-	       ufdbLogError( "W%03d: pthread_rwlock_unlock failed with code %d", tnum, ret );
-               UFDBglobalReconfig = 1;
+	       ufdbLogFatalError( "W%03d: pthread_rwlock_unlock failed with code %d", tnum, ret );
+               UFDBglobalReconfig = UFDB_RECONFIGR_FATAL;
                UFDBglobalTerminating = 1;
                (void) alarm( 0 );
                badSignal = SIGABRT;
@@ -3405,8 +3392,8 @@ write_error:
          {
             char errstr[128];
 
-            ufdbLogError( "W%03d: pthread_rwlock_unlock after write error failed with code %d", tnum, ret );
-            UFDBglobalReconfig = 1;
+            ufdbLogFatalError( "W%03d: pthread_rwlock_unlock after write error failed with code %d", tnum, ret );
+            UFDBglobalReconfig = UFDB_RECONFIGR_FATAL;
             UFDBglobalTerminating = 1;
             (void) alarm( 0 );
             badSignal = SIGABRT;
@@ -3858,7 +3845,7 @@ int main(
    /*
     * set reconfig immediately since during startup the worker threads must know that there is no database yet.
     */
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_INIT;
 
    UFDBinitializeIPcounters();
    UFDBinitializeUserCounters();
@@ -4007,7 +3994,7 @@ int main(
    /*
     *  Note: sockethandler terminated because of a signal.
     */
-   UFDBglobalReconfig = 1;
+   UFDBglobalReconfig = UFDB_RECONFIGR_FINISH;
    UFDBglobalTerminating = 1;
    alarm( 0 );
 

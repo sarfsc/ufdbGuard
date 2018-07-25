@@ -21,8 +21,8 @@ PROXY_PASSWORD=""
 ADMIN_EMAIL=""
 
 BLACKLIST_DIR="/local/squid/blacklists"
-CONFIGDIR="/local/ufdbguard/etc"
-BINDIR="/local/ufdbguard/bin"
+CONFIGDIR="/local/ufdbguard133/etc"
+BINDIR="/local/ufdbguard133/bin"
 
 # Optional parameters
 # -T for test mode

@@ -6,7 +6,7 @@
  * Parts of ufdbGuard are based on squidGuard.
  * This module is NOT based on squidGuard.
  * 
- * RCS $Id: ufdbglobals.c,v 1.7 2017/02/13 18:45:06 root Exp root $
+ * RCS $Id: ufdbglobals.c,v 1.8 2018/07/25 13:46:37 root Exp root $
  */
 
 #undef _FORTIFY_SOURCE
@@ -24,7 +24,7 @@ UFDB_GCC_ALIGN64
 volatile int    UFDBglobalStatus = UFDB_API_STATUS_VIRGIN;
 volatile int    UFDBglobalDatabaseStatus = UFDB_API_STATUS_DATABASE_OK;
 volatile int    UFDBglobalTerminating = 0;
-volatile int    UFDBglobalReconfig = 1;
+volatile int    UFDBglobalReconfig = UFDB_RECONFIGR_INIT;
 	 int    UFDBglobalNworkers = 68;
          int    UFDBglobalDebug = 0;			/* TO-DO: or keep volatile ??? */
          int    UFDBglobalCrashOnFatal = 0;

@@ -1505,7 +1505,6 @@ sta_found:
                sta->subNodes[j-1] = sta->subNodes[j];
             sta->nSubNodes--;
          }
-         /* TODO: remove longer paths in the next STA */
 
          /* abort the insertion */
          return 1;

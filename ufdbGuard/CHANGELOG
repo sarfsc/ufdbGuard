@@ -650,3 +650,10 @@ Release 1.33.6 - May 28, 2018
 
 Fix: ufdbguardd incorrectly blocked URLs that use HTTPS 
 
+
+Release 1.33.7 - July 25, 2018
+
+Fix: the pidfile parameter was not used and the pid was written to the default pidfile
+Fix: on blocking https sites, the final block page was not shown without ssl_bump
+Fix: implement workaround for fatal bug in gcc 4.x with -O3 that causes ufdbguardd to dump core
+

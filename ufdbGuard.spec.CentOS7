@@ -1,7 +1,7 @@
 # ufdbGuard.spec.CentOS7
 
 %global _hardened_build 1
-%global version 1.33.6
+%global version 1.33.7
 
 # no stripping of the binaries
 %global __os_install_post      %{nil}
@@ -310,6 +310,11 @@ exit 0
 # TODO
 
 %changelog
+* Wed Jul 25 2018 Marcus Kool <marcus-dot-kool@urlfilterdb.com> - 1.33.7
+Fix: implement workaround for fatal bug in gcc 4.x with -O3 that causes ufdbguardd to dump core
+Fix: the pidfile parameter was not used and the pid was written to the default pidfile
+Fix: on blocking https sites, the final block page was not shown without ssl_bump
+
 * Mon May 28 2018 Marcus Kool <marcus-dot-kool@urlfilterdb.com> - 1.33.6
 Fix: ufdbguardd incorrectly blocked URLs that use HTTPS
 

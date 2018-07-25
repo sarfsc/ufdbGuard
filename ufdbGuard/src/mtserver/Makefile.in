@@ -669,6 +669,10 @@ t2: ufdbgclient
 	@echo
 	./ufdbgclient -p $(PORT) -l . -d "www.sex.com:443" 2001:a60:a00d:1::defe:d0/foo.local johndoe
 	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.sex.com:443" 1.1.1.11 -
+	@echo
+	./ufdbgclient -p $(PORT) -l . -d "www.cnn.com:443" 1.1.1.11 -
+	@echo
 
 t2c: ufdbgclient
 	./ufdbgclient -p $(PORT) -l . -d "www.sex.com" 10.1.2.4/foo.local johndoe

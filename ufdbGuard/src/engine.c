@@ -6,7 +6,7 @@
  * Parts of ufdbGuard are based on squidGuard.
  * This module is NOT based on squidGuard.
  *
- * RCS $Id: engine.c,v 1.36 2018/05/25 13:13:33 root Exp root $
+ * RCS $Id: engine.c,v 1.37 2018/07/25 13:41:46 root Exp root $
  */
 
 
@@ -727,7 +727,7 @@ void UFDBmakeRedirectString(
       }
    }
 
-   sgParseRedirect( format, si, acl, si->aclpass, redirectBuffer, strcmp(si->protocol,"https")==0 );
+   sgParseRedirect( format, si, acl, si->aclpass, redirectBuffer );
 }
 
 
@@ -1249,7 +1249,8 @@ int UFDBdecideAccessBasedOnURL(
 	    if (decision == UFDB_ACL_ACCESS_BLOCK)
 	       si->blockReason = UFDB_API_BLOCKR_ACL;
 	    if (UFDBglobalDebug > 1)
-	       ufdbLogMessage( "W%03d: UFDBdecideAccessBasedOnURL: %s; acl \"%s\" matched category \"%s\" for  port %d  protocol %s  method %s  URL %s", 
+	       ufdbLogMessage( "W%03d: UFDBdecideAccessBasedOnURL: %s; acl \"%s\" matched category \"%s\" "
+                               "for  port %d  protocol %s  method %s  URL %s", 
 	                       si->worker, 
                                decision == UFDB_ACL_ACCESS_BLOCK ? "block" : "pass", 
 			       acl->name, aclpass->name, si->port, si->protocol, si->method, si->url2log );
@@ -1410,7 +1411,7 @@ int UFDBdecideAccessBasedOnURL(
    }
    else if (redirect != NULL) 
    {
-      redirect = sgParseRedirect( redirect, si, acl, aclpass, newredir, strcmp(si->protocol,"https")==0 );
+      redirect = sgParseRedirect( redirect, si, acl, aclpass, newredir );
    }
 
    if (redirect != NULL)
@@ -1740,7 +1741,7 @@ int UFDBdecideAccessByPeekStatus(
 
    if (redirect != NULL) 
    {
-      redirect = sgParseRedirect( redirect, si, acl, aclpass, newredir, strcmp(si->protocol,"https")==0 );
+      redirect = sgParseRedirect( redirect, si, acl, aclpass, newredir );
    }
    if (redirect != NULL)
    {

@@ -1,5 +1,5 @@
 #
-# RCS: $Id: Makefile.in,v 1.105 2017/09/17 21:30:11 root Exp root $
+# RCS: $Id: Makefile.in,v 1.106 2018/07/25 13:42:25 root Exp root $
 
 SHELL=/bin/sh
 
@@ -106,6 +106,18 @@ ufdbAnalyse.o: ufdbAnalyse.c ufdb.h ufdblib.h
 
 ufdbchkport.o: ufdbchkport.c ufdbchkport.h ufdb.h
 	$(COMPILE) -c ufdbchkport.c
+
+ufdbchkport.s.gcc730.O3: ufdbchkport.c ufdbchkport.h ufdb.h
+	/usr/local/gcc730/bin/gcc -c ufdbchkport.c -o $@  -S -O3 -dA -march=native
+
+ufdbchkport.s.gcc520.O3: ufdbchkport.c ufdbchkport.h ufdb.h
+	/usr/local/gcc520/bin/gcc -c ufdbchkport.c -o $@  -S -O3 -dA -march=native
+
+ufdbchkport.s.gcc.O3: ufdbchkport.c ufdbchkport.h ufdb.h
+	$(CC) -c ufdbchkport.c -o $@  -S -O3 -dA -march=native
+
+ufdbchkport.s.gcc.O2: ufdbchkport.c ufdbchkport.h ufdb.h
+	$(CC) -c ufdbchkport.c -o $@  -S -O2 -dA -march=native
 
 ufdbHostnames.o: ufdbHostnames.c ufdbHostnames.h ufdb.h
 	$(COMPILE) -c ufdbHostnames.c

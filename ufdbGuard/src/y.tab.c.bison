@@ -5076,6 +5076,8 @@ void ufdbFreeAllMemory( void )
    globalLogFile = NULL;
 #endif
 
+#if 0
+   /* we may need these variables during a reload */
    if (UFDBglobalPidFile != NULL)
    {
       ufdbFree( UFDBglobalPidFile );
@@ -5106,6 +5108,7 @@ void ufdbFreeAllMemory( void )
       ufdbFree( UFDBglobalExternalStatusCommand );
       UFDBglobalExternalStatusCommand = NULL;
    }
+#endif
 
    ufdbFreeSettingList( Setting );
    Setting = NULL;

@@ -6,8 +6,20 @@
  * Parts of the ufdbGuard daemon are based on squidGuard.
  * This module is NOT based on squidGuard.
  *
- * RCS $Id: ufdbchkport.c,v 1.109 2018/05/25 13:09:00 root Exp root $
+ * RCS $Id: ufdbchkport.c,v 1.110 2018/07/25 13:45:12 root Exp root $
  */
+
+/* gcc 4.8.5 has an optimizer bug with -O3 which generates incorrect code for the function UFDBsslPeekServer
+ * where inlined code overwrites the parameter "hostname" that is stored in register rbx.
+ * gcc 4.8.5 with -O2 does not have this bug since it does not inline.
+ * gcc 4.8.5 is the default compiler on Redhat Enterprise Linux/CentOS 7.x
+ * gcc 5.2.0 does not have this bug.
+ */
+#if __GNUC__ && !__clang__
+#if __GNUC__ <= 4
+#pragma GCC optimize ("no-inline")
+#endif
+#endif
 
 #include "ufdb.h"
 #include "ufdblib.h"
@@ -562,7 +574,6 @@ int UFDBdetectSSH(
 }
 
 
-UFDB_GCC_INLINE
 static const char * sslerr2str( int errnum )
 {
    switch (errnum)
@@ -1784,8 +1795,12 @@ void * UFDBhttpsTunnelVerifier(
 
       if (UFDBglobalTerminating)
 	 pthread_exit( (void *) 0 );
-      if (UFDBglobalReconfig)
+
+      while (UFDBglobalReconfig)
+      {
+         pthread_testcancel();
 	 usleep( 400000 );
+      }
    }
 
    return NULL;
@@ -3617,6 +3632,7 @@ int UFDBsslPeekServer(
     * if SSL+HTTP, detect known tunnels based on content
     */
 
+   info = NULL;
    status = lookupHTTPScache( hostname, portnumber, 1, &info );
 
    if (UFDBglobalDebug > 1)
@@ -3688,8 +3704,8 @@ int UFDBsslPeekServer(
 	 if (UFDBglobalReconfig  ||  UFDBglobalTerminating)	/* this thread must release the readlock asap */
 	 {
 	    if (UFDBglobalDebug > 1)
-	       ufdbLogMessage( "W%03d: UFDBsslPeekServer: stopped waiting for other thread peeking %s:%d since reconfig=true",
-			       worker, hostname, portnumber );
+	       ufdbLogMessage( "W%03d: UFDBsslPeekServer: stopped waiting for other thread peeking %s:%d since reconfig=%d",
+			       worker, hostname, portnumber, UFDBglobalReconfig );
 	    return UFDB_API_BEING_VERIFIED;
 	 }
 
@@ -3724,11 +3740,11 @@ int UFDBsslPeekServer(
    if (UFDBglobalDebug > 1)
       ufdbLogMessage( "W%03d: UFDBsslPeekServer: socket to %s is opened successfully. fd=%d", worker, hostname, s );
 
-   if (UFDBglobalReconfig)		/* this thread must release the readlock asap */
+   if (UFDBglobalReconfig != UFDB_RECONFIGR_NONE)	/* this thread must release the readlock asap */
    {
       if (UFDBglobalDebug)
-	 ufdbLogMessage( "W%03d: UFDBsslPeekServer: interrupted peeking %s:%d since reconfig=true",
-			 worker, hostname, portnumber );
+	 ufdbLogMessage( "W%03d: UFDBsslPeekServer: interrupted peeking %s:%d since reconfig=%d",
+			 worker, hostname, portnumber, UFDBglobalReconfig );
       close( s );
       updateHTTPScache( hostname, portnumber, UFDB_API_ERR_OUTDATED, 0, &info );
       return UFDB_API_BEING_VERIFIED;

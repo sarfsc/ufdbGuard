@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * (GPL) along with this program.
  *
- * RCS: $Id: sgDiv.c,v 1.120 2017/06/01 14:18:44 root Exp root $
+ * RCS: $Id: sgDiv.c,v 1.121 2018/07/25 13:43:02 root Exp root $
  */
 
 
@@ -1277,13 +1277,13 @@ char * sgParseRedirect(
   struct SquidInfo *   req,
   struct Acl *         acl, 
   struct AclCategory * aclpass,
-  char *               buf,
-  int                  force_302 )
+  char *               buf  )
 {
   char * p;
   char * q;
   char * t;
   char * d;
+  int    force_302;
 
   if (aclpass == NULL)
     aclpass = defaultAcl->pass;
@@ -1291,9 +1291,17 @@ char * sgParseRedirect(
   q = p = redirect;
   buf[0] = '\0';
 
-  if (force_302  &&  strncmp(redirect,"302:",4) != 0)
+  force_302 = 0;
+  if (!(redirect[0] == '3'  &&  redirect[1] == '0'  &&  redirect[2] != '\0'  &&  redirect[3] == ':'))
   {
-     strcpy( buf, "302:" );
+     if (UFDBglobalSquidHelperProtocol < UFDB_SQUID_HELPER_PROTOCOL3  ||  strcmp( req->method, "CONNECT" ) != 0)
+     {
+        if (strcmp(req->protocol,"https") == 0)
+        {
+           force_302 = 1;
+           strcpy( buf, "302:" );
+        }
+     }
   }
 
   while ((p = strchr(p,'%')) != NULL)
@@ -1448,7 +1456,7 @@ char * sgParseRedirect(
 
   if (q == redirect)   	/* no '%' found in redirect string */
   {
-    if (force_302  &&  strncmp( redirect, "302:", 4 ) != 0)
+    if (force_302)
     {
        strcpy( buf, "302:" );
        strcat( buf, redirect );

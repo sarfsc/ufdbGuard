@@ -4,7 +4,7 @@
 # based upon pstack of the gdb package, Copyright by FSF
 # modifications by Marcus Kool
 #
-# RCS: $Id: ufdb-pstack.in,v 1.27 2017/04/21 14:47:05 root Exp root $
+# RCS: $Id: ufdb-pstack.in,v 1.28 2018/07/25 14:01:34 root Exp root $
 
 trap "echo ignoring signals" 1 2 3 4 5 6 7 8 10 11 12 13 14 15 20
 
@@ -151,6 +151,8 @@ then
    set pagination no
    print "UFDBglobalReconfig"
    p UFDBglobalReconfig
+   print "UFDBglobalTerminating"
+   p UFDBglobalTerminating
    print "UFDBglobalStatus"
    p UFDBglobalStatus
    print "UFDBglobalDatabaseStatus"

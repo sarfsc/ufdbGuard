@@ -6,7 +6,7 @@
  * Parts of the ufdbGuard daemon are based on squidGuard.
  * This module is NOT based on squidGuard.
  *
- * RCS $Id: ufdb.h.in,v 1.79 2018/03/18 19:01:17 root Exp root $
+ * RCS $Id: ufdb.h.in,v 1.80 2018/07/25 13:47:16 root Exp root $
  */
 
 /* 
@@ -19,7 +19,7 @@
  *                    boys
  *             pools
  *             youtube
- *		      /watch?v=id1	# parameter support is not yet implemented !
+ *		      /watch?v=id1
  *		      /watch?v=id2
  *		      /watch?v=idN
  *             zazu
@@ -248,6 +248,18 @@ extern "C" {
 #define UFDB_ROTATE_LOG_FILES
 #define UFDB_MAX_INITIAL_LOGFILE_SIZE	(200*1024*1024)
 #define UFDB_MAX_LOGFILE_SIZE           (200*1024*1024)
+
+#define UFDB_RECONFIGR_NONE             0
+#define UFDB_RECONFIGR_INIT             1
+#define UFDB_RECONFIGR_FINISH           2
+#define UFDB_RECONFIGR_HUP              3
+#define UFDB_RECONFIGR_RELOAD           4
+#define UFDB_RECONFIGR_TERM             5
+#define UFDB_RECONFIGR_ABORT            6
+#define UFDB_RECONFIGR_BADSIG           7
+#define UFDB_RECONFIGR_FATAL            8
+#define UFDB_RECONFIGR_STACK            9
+#define UFDB_RECONFIGR_FORTIFY         10
 
 #define UFDB_DEFAULT_REFRESH_USERLIST	15	/* minutes */
 #define UFDB_DEFAULT_REFRESH_DOMAINLIST	15	/* minutes */
