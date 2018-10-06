@@ -40,6 +40,7 @@ volatile int    UFDBglobalReconfig = UFDB_RECONFIGR_INIT;
          int    UFDBglobalUploadStats = 1;
          int    UFDBglobalYoutubeEdufilter = 0;
          int    UFDBglobalAllowGoogleHTTPSusingIP = 0;
+         int    UFDBglobalDenyMode = 0;
 
 volatile struct Source * SourceList = NULL;
 

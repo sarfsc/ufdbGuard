@@ -163,6 +163,7 @@ void ufdbFreeDomainDb( struct sgDb * dbp );
 %token ALLOW_ANYDESK_OVER_HTTPS ALLOW_TEAMVIEWER_OVER_HTTPS
 %token ANALYSE_UNCATEGORISED LOG_UNCATEGORISED_URLS UPLOAD_STATS
 %token SAFE_SEARCH MAX_LOGFILE_SIZE
+%token DENY_MODE
 
 
 %type <string> IDENTIFIER
@@ -245,6 +246,10 @@ youtube_edufilter_id:
 allow_google_https_using_ip:
 		  ALLOW_GOOGLE_HTTPS_USING_IP on_or_off   { UFDBglobalAllowGoogleHTTPSusingIP = $2; }
 	        ;
+
+deny_mode:
+		  DENY_MODE on_or_off   { UFDBglobalDenyMode = $2; }
+		  ;
 
 debug_filter:
 		  UFDB_DEBUG_FILTER on_or_off   { UFDBglobalDebug = $2; }
@@ -927,6 +932,7 @@ statement:
 		| youtube_edufilter
 		| allow_google_https_using_ip
 		| youtube_edufilter_id
+		| deny_mode
 		| max_logfile_size
 	     	| acl_block
 	     	| rew_block
@@ -976,6 +982,7 @@ int sgReadConfig(
    UFDBglobalYoutubeEdufilter = 0;
    UFDBglobalYoutubeEdufilterID = (char *) "none";
    UFDBglobalAllowGoogleHTTPSusingIP = 0;
+   UFDBglobalDenyMode = 1;
 
 #if 0
    /* When a database is reloaded, these variables may NOT be reset since they are used during the reload !! */
