@@ -184,6 +184,11 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
 
   UFDBlogConfig();
 
+  if (UFDBglobalDenyMode)
+    ufdbLogMessage( "ufdbGuard started in DENY mode.");
+  else
+    ufdbLogMessage( "ufdbGuard started in standard ALLOW mode.");
+
   gettimeofday( &ready_time, NULL );
   ready_time.tv_sec = ready_time.tv_sec + globalDebugTimeDelta;
   ufdbLogMessage( "ufdbGuard ready for requests at %ld.%03ld",
