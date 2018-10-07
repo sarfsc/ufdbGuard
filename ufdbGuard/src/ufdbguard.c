@@ -63,6 +63,83 @@ static void usage( void )
   exit( 1 );
 }
 
+void pass( struct SquidInfo *si )
+{
+  if (UFDBglobalLogAllRequests)
+  {
+    const char * category;
+    if (squidInfo.aclpass == NULL)
+	category = "unknown";
+    else if (squidInfo.aclpass->name == NULL)
+	category = "unknown";
+    else
+	category = squidInfo.aclpass->name;
+
+    if (squidInfo.ident[0] == '\0')
+    {
+	squidInfo.ident[0] = '-';
+	squidInfo.ident[1] = '\0';
+    }
+    ufdbLogMessage( "PASS  %-8s %-15s %-10s %-9s %s",
+		    squidInfo.ident, squidInfo.srcIP, acl->name, category,
+		    squidInfo.url2log );
+  }
+
+  putchar( '\n' );  	/* OK */
+}
+
+void block( struct SquidInfo *si )
+{
+  /* src found, so block the URL and send the redirect string */
+  if (si->srcDomain[0] == '\0') {
+    si->srcDomain[0] = '-';
+    si->srcDomain[1] = '\0';
+  }
+
+  if (si->ident[0] == '\0') {
+    si->ident[0] = '-';
+    si->ident[1] = '\0';
+  }
+
+  if (UFDBglobalDebugRedirect)
+  {
+    ufdbLogMessage( "REDIRECT %s %s/%s %s %s %s\n", redirect, si->srcIP,
+		    si->srcDomain, si->ident, "GET", si->urlgroup );
+  }
+
+  if (noRedirects)
+    putchar( '\n' );  	/* fake OK */
+  else
+  {
+    char urlgrp[64];
+    const char * category;
+
+    if (si->aclpass == NULL)
+      category = "unknown";
+    else if (si->aclpass->name == NULL)
+      category = "unknown";
+    else
+      category = si->aclpass->name;
+
+    if (si->urlgroup[0] == '#')
+      urlgrp[0] = '\0';
+    else
+    {
+      urlgrp[0] = ' ';
+      trncpy( &urlgrp[1], si->urlgroup, 62 );
+      urlgrp[63] = '\0';
+    }
+    printf( "%s %s/%s %s %s%s\n", redirect, si->srcIP,
+	    si->srcDomain, si->ident, "GET", urlgrp );
+
+    if (UFDBglobalLogAllRequests)
+    {
+      ufdbLogMessage( "BLOCK %-8s %-15s %-10s %-9s %s",
+		      si->ident, si->srcIP, acl->name, category,
+		      si->url2log );
+    }
+  }
+}
 
 int ufdbguard_main( int argc, char ** argv, char ** envp )
 {
@@ -251,28 +328,8 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
 	    /* src not found */
 	    if (src == NULL || src->cont_search == 0) 
 	    {
-	       if (UFDBglobalLogAllRequests)
-	       {
-		  const char * category;
-		  if (squidInfo.aclpass == NULL)
-		     category = "unknown";
-		  else if (squidInfo.aclpass->name == NULL)
-		     category = "unknown";
-		  else
-		     category = squidInfo.aclpass->name;
-
-		  if (squidInfo.ident[0] == '\0')
-		  {
-		     squidInfo.ident[0] = '-';
-		     squidInfo.ident[1] = '\0';
-		  }
-		  ufdbLogMessage( "PASS  %-8s %-15s %-10s %-9s %s",
-				  squidInfo.ident, squidInfo.srcIP, acl->name, category,
-				  squidInfo.url2log );
-	       }
-
-	      putchar( '\n' );		/* OK */
-	      break;
+		pass (&squidInfo);
+		break;
 	    }
 	    else
 	      if (src->next != NULL) {
@@ -281,81 +338,13 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
 	      }
               else
               {
-		  if (UFDBglobalLogAllRequests)
-		  {
-		     const char * category;
-		     if (squidInfo.aclpass == NULL)
-			category = "unknown";
-		     else if (squidInfo.aclpass->name == NULL)
-			category = "unknown";
-		     else
-			category = squidInfo.aclpass->name;
-
-		     if (squidInfo.ident[0] == '\0')
-		     {
-			squidInfo.ident[0] = '-';
-			squidInfo.ident[1] = '\0';
-		     }
-		    ufdbLogMessage( "PASS  %-8s %-15s %-10s %-9s %s",
-				    squidInfo.ident, squidInfo.srcIP, acl->name, category,
-				    squidInfo.url2log );
-	        }
-
-		putchar( '\n' );  	/* OK */
+		pass (&squidInfo);
 		break;
 	      }
 	  }
 	  else
 	  {
-	    /* src found, so block the URL and send the redirect string */
-	    if (squidInfo.srcDomain[0] == '\0') {
-	      squidInfo.srcDomain[0] = '-';
-	      squidInfo.srcDomain[1] = '\0';
-	    }
-
-	    if (squidInfo.ident[0] == '\0') {
-	      squidInfo.ident[0] = '-';
-	      squidInfo.ident[1] = '\0';
-	    }
-
-            if (UFDBglobalDebugRedirect)
-	    {
-	       ufdbLogMessage( "REDIRECT %s %s/%s %s %s %s\n", redirect, squidInfo.srcIP,
-			       squidInfo.srcDomain, squidInfo.ident, "GET", squidInfo.urlgroup );
-	    }
-
-	    if (noRedirects)
-		putchar( '\n' );  	/* fake OK */
-	    else
-	    {
-	       char urlgrp[64];
-	       const char * category;
-
-	       if (squidInfo.aclpass == NULL)
-		  category = "unknown";
-	       else if (squidInfo.aclpass->name == NULL)
-		  category = "unknown";
-	       else
-		  category = squidInfo.aclpass->name;
-
-	       if (squidInfo.urlgroup[0] == '#')
-	          urlgrp[0] = '\0';
-	       else
-	       {
-		  urlgrp[0] = ' ';
-	          strncpy( &urlgrp[1], squidInfo.urlgroup, 62 );
-		  urlgrp[63] = '\0';
-	       }
-	       printf( "%s %s/%s %s %s%s\n", redirect, squidInfo.srcIP,
-			squidInfo.srcDomain, squidInfo.ident, "GET", urlgrp );
-
-	       if (UFDBglobalLogAllRequests)
-	       {
-		    ufdbLogMessage( "BLOCK %-8s %-15s %-10s %-9s %s",
-				    squidInfo.ident, squidInfo.srcIP, acl->name, category,
-				    squidInfo.url2log );
-	       }
-	    }
+	    block (&squidInfo);
 	    break;
 	  }
 	} /*for (;;)*/
