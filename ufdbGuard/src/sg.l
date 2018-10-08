@@ -116,6 +116,7 @@ logall-httpd  		    return LOGALL_HTTPD;
 logall  		    return LOGALL;
 off                         return OFF;
 on                          return ON;
+deny-mode		    return DENY_MODE;
 
 option			    return OPTION;
 ufdb-expression-optimisation return UFDB_EXPRESSION_OPTIMISATION;
