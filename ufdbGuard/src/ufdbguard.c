@@ -328,6 +328,20 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
 	    /* src not found */
 	    if (src == NULL || src->cont_search == 0) 
 	    {
+		if (UFDBglobalDenyMode)
+		{
+		  if (src == NULL || src->next == NULL)
+		  {
+		    block (&squidInfo);
+		    break;
+		  }
+		  else
+		  {
+		    src = src->next;
+		    continue;
+		  }
+		}
+
 		pass (&squidInfo);
 		break;
 	    }
