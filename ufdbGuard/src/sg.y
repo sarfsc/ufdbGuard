@@ -1210,7 +1210,7 @@ void defSource(
    sp = (struct Source *) ufdbMallocAligned( 64, sizeof(struct Source) );
    sp->name = source;
    sp->active = 1;
-   sp->evaluationMethod = UFDB_EVAL_OR;
+   sp->evaluationMethod = UFDBglobalDenyMode ? UFDB_EVAL_AND : UFDB_EVAL_OR;
    sp->ipv4 = NULL;
    sp->ipv6 = NULL;
    sp->lastipv4 = NULL;
@@ -1219,7 +1219,7 @@ void defSource(
    sp->userDb = NULL;
    sp->time = NULL;
    sp->within = UFDB_ACL_NONE;
-   sp->cont_search = 0;
+   sp->cont_search = UFDBglobalDenyMode ? 1 : 0;
    sp->sarg0 = NULL;
    sp->userquota.seconds = 0;
    sp->userquota.renew = 0;
