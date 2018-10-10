@@ -375,6 +375,7 @@ void   UFDBaclEngineInit __P(( void ));
 struct Source * defSourceFindName __P(( char * ));
 struct Source * UFDBfindSource __P(( struct Source *, struct SquidInfo * ));
 struct Acl * UFDBfindACLbySource __P(( struct Source *, struct SquidInfo * ));
+struct Acl * UFDBfindNextACLforSource __P(( struct Acl *, struct Source *, struct SquidInfo * ));
 int    UFDBCheckACLaccess  __P(( int, struct Acl *, struct SquidInfo *, char * ));
 int    UFDBdecideAccessBasedOnURL __P(( int reconfiguring, struct Acl * acl, struct SquidInfo * si, char * redirectURL ));
 int    UFDBdecideImplicitAccessBasedOnURL __P(( int reconfiguring, struct Acl * acl, struct SquidInfo * si, char * redirectURL ));

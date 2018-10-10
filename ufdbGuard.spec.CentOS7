@@ -13,7 +13,7 @@
 
 Name: ufdbGuard
 Version: %{version}
-Release: DenyMode1.CentOS7
+Release: DenyMode2.CentOS7
 Summary: ufdbGuard is a URL filter for Squid
 License: GNU General Public License v2.0 only
 Group: Internet/Proxy
@@ -310,6 +310,9 @@ exit 0
 # TODO
 
 %changelog
+* Wed Oct 10 2018 Evgeny Sinelnikov <sin@altlinux.org> - 1.33.7-DenyMode2
+Add: support reuse-acl-names option (enabled by default)
+
 * Mon Oct 08 2018 Evgeny Sinelnikov <sin@altlinux.org> - 1.33.7-DenyMode1
 Add: support deny-mode option (enabled by default)
 

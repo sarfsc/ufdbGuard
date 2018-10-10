@@ -2839,6 +2839,7 @@ do_next_src:
 	       src->nmatches++;			/* no atomic increment: we may loose a few, no problem */
 	    acl = UFDBfindACLbySource( src, &squidInfo );       /* returns acl of source or defaultAcl */
 
+do_next_acl:
 	    if (parseOnly)
 	    {
 	       if (write_answer_ok( fd, answerBuf, &squidInfo ) < 0)
@@ -2996,6 +2997,21 @@ do_next_src:
                   }
                }
 	    }
+
+            if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalReuseAclNames  &&  
+                acl != NULL)
+            {
+               struct Acl * nextacl;
+               nextacl = UFDBfindNextACLforSource( acl, src, &squidInfo );
+               if (nextacl != NULL)
+               { 
+                  if (UFDBglobalDebug > 1)
+                     ufdbLogMessage( "W%03d: acl %s has next rule matched for current source %s", 
+                                     tnum, acl->name, src->name );
+                  acl = nextacl;
+                  goto do_next_acl;
+               }
+            }
 
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  !squidInfo.matchedAny  &&  
                 src != NULL  &&  src->cont_search  &&  src->next != NULL)

@@ -698,6 +698,51 @@ struct Acl * UFDBfindACLbySource(
    return defaultAcl;
 }
 
+/*
+ * called by main loop: find the next active ACL that matches a source
+ */
+UFDB_GCC_HOT
+struct Acl * UFDBfindNextACLforSource( 
+   struct Acl *        current,
+   struct Source *     source,
+   struct SquidInfo *  si  )
+{
+   struct Acl *    acl = current->next;
+
+   if (source == NULL)
+   {
+#if UFDB_DEBUG_ACL_ACCESS
+      if (UFDBglobalDebug)
+#else
+      if (UFDBglobalDebug > 1)
+#endif
+	 ufdbLogMessage( "W%03d: UFDBfindNextACLforSource: source=NULL returning NULL", si->worker );
+
+      return NULL;
+   }
+
+   for (;  acl != NULL;  acl = acl->next)
+   {
+      if (acl->source == source  &&  acl->active)
+      {
+#if UFDB_DEBUG_ACL_ACCESS
+	 if (UFDBglobalDebug)
+	    ufdbLogMessage( "W%03d: UFDBfindNextACLforSource: next active ACL for source '%s' found", si->worker, source->name );
+#endif
+
+	 return acl;
+      }
+   }
+
+#if UFDB_DEBUG_ACL_ACCESS
+   if (UFDBglobalDebug)
+      ufdbLogMessage( "W%03d: UFDBfindNextACLforSource: no next active ACL for source '%s' found, returning NULL", 
+                      si->worker, source->name );
+#endif
+
+   return NULL;
+}
+
 
 void UFDBmakeRedirectString( 
    struct SquidInfo * si,
