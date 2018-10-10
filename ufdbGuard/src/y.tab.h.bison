@@ -188,7 +188,8 @@ extern int yydebug;
     UPLOAD_STATS = 398,
     SAFE_SEARCH = 399,
     MAX_LOGFILE_SIZE = 400,
-    DENY_MODE = 401
+    DENY_MODE = 401,
+    REUSE_ACL_NAMES = 402
   };
 #endif
 /* Tokens.  */
@@ -336,6 +337,7 @@ extern int yydebug;
 #define SAFE_SEARCH 399
 #define MAX_LOGFILE_SIZE 400
 #define DENY_MODE 401
+#define REUSE_ACL_NAMES 402
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -350,7 +352,7 @@ union YYSTYPE
   char * dvalcron;
   int    integer;
 
-#line 354 "y.tab.h" /* yacc.c:1909  */
+#line 356 "y.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

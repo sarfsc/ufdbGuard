@@ -40,6 +40,7 @@ extern          int    UFDBglobalUploadStats;
 extern          int    UFDBglobalYoutubeEdufilter;
 extern          int    UFDBglobalAllowGoogleHTTPSusingIP;
 extern          int    UFDBglobalDenyMode;
+extern          int    UFDBglobalReuseAclNames;
 
 extern time_t          UFDBglobalDatabaseLoadTime;
 extern char            UFDBglobalDateOfCheckedDB[32];

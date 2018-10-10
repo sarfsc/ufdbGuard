@@ -164,6 +164,7 @@ void ufdbFreeDomainDb( struct sgDb * dbp );
 %token ANALYSE_UNCATEGORISED LOG_UNCATEGORISED_URLS UPLOAD_STATS
 %token SAFE_SEARCH MAX_LOGFILE_SIZE
 %token DENY_MODE
+%token REUSE_ACL_NAMES
 
 
 %type <string> IDENTIFIER
@@ -249,6 +250,10 @@ allow_google_https_using_ip:
 
 deny_mode:
 		  DENY_MODE on_or_off   { UFDBglobalDenyMode = $2; }
+		  ;
+
+reuse_acl_names:
+		  REUSE_ACL_NAMES on_or_off   { UFDBglobalReuseAclNames = $2; }
 		  ;
 
 debug_filter:
@@ -933,6 +938,7 @@ statement:
 		| allow_google_https_using_ip
 		| youtube_edufilter_id
 		| deny_mode
+		| reuse_acl_names
 		| max_logfile_size
 	     	| acl_block
 	     	| rew_block
@@ -983,6 +989,7 @@ int sgReadConfig(
    UFDBglobalYoutubeEdufilterID = (char *) "none";
    UFDBglobalAllowGoogleHTTPSusingIP = 0;
    UFDBglobalDenyMode = 1;
+   UFDBglobalReuseAclNames = 1;
 
 #if 0
    /* When a database is reloaded, these variables may NOT be reset since they are used during the reload !! */
@@ -3708,7 +3715,7 @@ void sgAcl(
 
    if (AclList != NULL) 
    {
-      if (sgAclFindName(name) != NULL)
+      if (sgAclFindName(name) != NULL && !UFDBglobalReuseAclNames)
       {
 	 ufdbLogFatalError( "line %d: ACL \"%s\" is already defined in configuration file %s",
 			    lineno, name, UFDBglobalConfigFile );

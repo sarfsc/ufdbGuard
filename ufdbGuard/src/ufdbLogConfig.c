@@ -381,6 +381,7 @@ void UFDBlogConfig( void )
    ufdbLogMessage( "allow-google-https-using-ip %s", UFDBglobalAllowGoogleHTTPSusingIP ? "on" : "off" );
 #endif
    ufdbLogMessage( "deny-mode %s", UFDBglobalDenyMode ? "on" : "off" );
+   ufdbLogMessage( "reuse-acl-names %s", UFDBglobalReuseAclNames ? "on" : "off" );
 
    if (UFDBglobalDebug > 1)
       ufdbLogMessage( "ufdb-debug-filter %d", UFDBglobalDebug );
