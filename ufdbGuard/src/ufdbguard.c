@@ -315,6 +315,11 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
 	  int access;
 
 	  src = UFDBfindSource( src, &squidInfo );
+	  if (src != NULL)
+	    ufdbLogMessage( "Main loop: src found: %s (%s)\n", src->name, src->active ? "active" : "not active");
+	  else
+	    ufdbLogMessage( "Main loop: not found\n"); 
+
 	  acl = UFDBfindACLbySource( src, &squidInfo );
 	  if (parseOnly)
 	  {
@@ -323,20 +328,24 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
 	  }
 	  redirect = tmp;
 	  access = UFDBdecideAccessBasedOnURL( 0, acl, &squidInfo, redirect );
-	  if (access == UFDB_ACL_ACCESS_DUNNO  ||  access == UFDB_ACL_ACCESS_ALLOW)
+	  ufdbLogMessage( "Main loop: access = %d\n", access);
+	  if ((access == UFDB_ACL_ACCESS_DUNNO && !UFDBglobalDenyMode) ||  access == UFDB_ACL_ACCESS_ALLOW)
 	  {
 	    /* src not found */
 	    if (src == NULL || src->cont_search == 0) 
 	    {
+		ufdbLogMessage( "Main loop: no src (%p) access\n", src);
 		if (UFDBglobalDenyMode)
 		{
 		  if (src == NULL || src->next == NULL)
 		  {
+		    ufdbLogMessage( "Main loop: DenyMode block\n");
 		    block (&squidInfo);
 		    break;
 		  }
 		  else
 		  {
+		    ufdbLogMessage( "Main loop: DenyMode next\n");
 		    src = src->next;
 		    continue;
 		  }
@@ -347,6 +356,7 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
 	    }
 	    else
 	      if (src->next != NULL) {
+		ufdbLogMessage( "Main loop: next src\n");
 		src = src->next;
 		continue;
 	      }
