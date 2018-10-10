@@ -536,6 +536,7 @@ int ufdbguard_main( int argc, char ** argv, char ** envp );
 #define UFDB_API_BLOCKR_FATAL_ERROR		7
 #define UFDB_API_BLOCKR_CHECKED                 8
 #define UFDB_API_BLOCKR_YOUTUBE_EDUFILTER       9
+#define UFDB_API_BLOCKR_DENY_MODE               10
 
 #define UFDB_API_ALLOW_QUEUING     	        1
 #define UFDB_API_VERBOSE_OUTPUT    	        2

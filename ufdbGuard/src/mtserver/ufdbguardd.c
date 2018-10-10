@@ -2299,6 +2299,7 @@ static const char * _blockReason(
    case UFDB_API_BLOCKR_FATAL_ERROR:       return "BLOCK-FATAL";
    case UFDB_API_BLOCKR_CHECKED:           return "PASS";
    case UFDB_API_BLOCKR_YOUTUBE_EDUFILTER: return "REDIR";
+   case UFDB_API_BLOCKR_DENY_MODE:         return "BLOCK";
    }
    return "BLOCK";
 }
@@ -3011,6 +3012,17 @@ do_next_src:
                }
             }
 
+            if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalDenyMode)
+            {
+               { 
+                  decision = UFDB_ACL_ACCESS_BLOCK;
+                  squidInfo.blockReason = UFDB_API_BLOCKR_DENY_MODE;
+                  if (UFDBglobalDebug)
+                     ufdbLogMessage( "%s:%d blocked because deny-mode is on", 
+                                     squidInfo.domain, squidInfo.port );
+               }
+            }
+
 	    if (decision == UFDB_ACL_ACCESS_DUNNO  &&  squidInfo.port != 80  &&  
                 !squidInfo.BlockedBumpedConnectAllowed)
 	    {
@@ -3049,6 +3061,11 @@ do_next_src:
 	    {
 	       ACLident = "config";
 	       categoryIdent = "https-option";
+	    }
+	    else if (squidInfo.blockReason == UFDB_API_BLOCKR_DENY_MODE)
+	    {
+	       ACLident = "config";
+	       categoryIdent = "deny-mode";
 	    }
 	    else if (squidInfo.blockReason == UFDB_API_BLOCKR_CHECKED)
 	    {
