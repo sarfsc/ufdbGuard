@@ -202,6 +202,8 @@ redirect-loading-database   return REDIRECT_LOADING_DATABASE;
 redirect-https              return REDIRECT_HTTPS;
 redirect-bumped-https       return REDIRECT_BUMPED_HTTPS;
 
+redirect-default-url        return REDIRECT_DEFAULT_URL;
+
 minutely    	return MINUTELY;
 hourly      	return HOURLY;
 daily       	return DAILY;

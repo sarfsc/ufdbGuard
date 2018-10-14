@@ -761,14 +761,12 @@ void UFDBmakeRedirectString(
       if (defaultAcl == NULL)
 	 /* TO-DO: copy the redirect rule for the security or proxy category */
 	 /* TO-DO: instead of referring to cgibin.urlfilterdb.com */
-	 format = (char *) "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
-		           "remark=nodefaultacl&clientgroup=%s&category=%t&url=%u";
+	 format = (char *) UFDBglobalRedirectNoDefaultACLClientCategoryURL;
       else
       {
 	 format = defaultAcl->redirect;
 	 if (format == NULL)
-	    format = (char *) "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
-			      "remark=nodefaultredirect&clientgroup=%s&category=%t&url=%u";
+	    format = (char *) UFDBglobalRedirectNoDefaultRedirectClientCategoryURL;
       }
    }
 
@@ -1199,8 +1197,7 @@ int UFDBdecideAccessBasedOnURL(
    {  
       decision = UFDB_ACL_ACCESS_BLOCK;
       if (defaultAcl == NULL  ||  defaultAcl->redirect == NULL)
-         redirect = (char *) "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
-		             "remark=nodefaultacl&category=%t&url=%u";
+         redirect = (char *) UFDBglobalRedirectNoDefaultACLCategoryURL;
       else
 	 redirect = defaultAcl->redirect;
    }
@@ -1389,8 +1386,7 @@ int UFDBdecideAccessBasedOnURL(
             /* TO-DO: copy the redirect rule for the security or proxy category */
             /* TO-DO: instead of referring to cgibin.urlfilterdb.com */
             /* TODO: for HTTPS connections use UFDBglobalRedirectHttps/UFDBglobalRedirectBumpedHttps ***** */
-            redirect = (char *) "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
-  	                        "clientgroup=%s&category=%t&url=%u";
+            redirect = (char *) UFDBglobalRedirectClientCategoryURL;
          }
 	 if (UFDBglobalDebug > 1)
 	    ufdbLogMessage( "W%03d: UFDBdecideAccessBasedOnURL: block; redirect is now '%s'", 
@@ -1526,8 +1522,7 @@ int UFDBdecideAccessByPeekStatus(
    {  
       decision = UFDB_ACL_ACCESS_BLOCK;
       if (defaultAcl == NULL  ||  defaultAcl->redirect == NULL)
-         redirect = (char *) "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
-		             "remark=nodefaultacl&category=%t&url=%u";
+         redirect = (char *) UFDBglobalRedirectNoDefaultACLCategoryURL;
       else
 	 redirect = defaultAcl->redirect;
 
@@ -1768,8 +1763,7 @@ int UFDBdecideAccessByPeekStatus(
             /* TO-DO: copy the redirect rule for the security or proxy category */
             /* TO-DO: instead of referring to cgibin.urlfilterdb.com */
             /* TO-DO: for HTTPS connections use UFDBglobalRedirectHttps/UFDBglobalRedirectBumpedHttps ***** */
-            redirect = (char *) "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
-  	                        "clientgroup=%s&category=%t&url=%u";
+            redirect = (char *) UFDBglobalRedirectClientCategoryURL;
          }
          if (si->port == 443  ||  strcmp( si->protocol, "https" ) == 0)
          {

@@ -3307,8 +3307,7 @@ do_next_acl:
                      else if (squidInfo.port == 443)
                         strcpy( redirect, UFDBglobalRedirectBumpedHttps );
                      else
-                        strcpy( redirect, "http://cgibin.urlfilterdb.com/cgi-bin/URLblocked.cgi?"
-                                          "category=%t&url=%u" );
+                        strcpy( redirect, UFDBglobalRedirectCategoryURL );
                   }
 		  if (write_answer_redir( fd, answerBuf, redirect, &squidInfo ) < 0)
 		  {

@@ -424,6 +424,13 @@ void UFDBlogConfig( void )
                    UFDBglobalURLlookupResultFatalError==UFDB_ALLOW ? "allow" : "deny" );
    ufdbLogMessage( "redirect-fatal-error \"%s\"", UFDBglobalFatalErrorRedirect );
 
+   ufdbLogMessage( "redirect-default-url \"%s\"", UFDBglobalRedirectURL );
+   ufdbLogMessage( " - \"%s\"", UFDBglobalRedirectCategoryURL );
+   ufdbLogMessage( " - \"%s\"", UFDBglobalRedirectClientCategoryURL );
+   ufdbLogMessage( " - \"%s\"", UFDBglobalRedirectNoDefaultACLCategoryURL );
+   ufdbLogMessage( " - \"%s\"", UFDBglobalRedirectNoDefaultACLClientCategoryURL );
+   ufdbLogMessage( " - \"%s\"", UFDBglobalRedirectNoDefaultRedirectClientCategoryURL );
+
    ufdbLogMessage( " " );
 
    for (t = TimeList;  t != NULL;  t = t->next)

@@ -138,7 +138,7 @@ void ufdbFreeDomainDb( struct sgDb * dbp );
 %token USERQUOTA GROUP 
 %token NL NUMBER NUMBERS
 %token PASS REDIRECT SUBST CHAR MINUTELY HOURLY DAILY WEEKLY DATE
-%token REDIRECT_FATAL_ERROR REDIRECT_LOADING_DATABASE REDIRECT_HTTPS REDIRECT_BUMPED_HTTPS
+%token REDIRECT_FATAL_ERROR REDIRECT_LOADING_DATABASE REDIRECT_HTTPS REDIRECT_BUMPED_HTTPS REDIRECT_DEFAULT_URL
 %token WITHIN OUTSIDE ELSE ANONYMOUS SPORADIC
 %token PIDFILE LOGFILE LOGDIR LOGPASS LOGBLOCK LOGALL LOGALL_HTTPD
 %token MAIL_SERVER MY_HOSTNAME ADMIN_EMAIL SENDER_EMAIL EXTERNAL_STATUS_COMMAND
@@ -488,6 +488,31 @@ redirect_loading_database:
 redirect_fatal_error:
 		  REDIRECT_FATAL_ERROR  QSTRING 
 		     { strcpy( UFDBglobalFatalErrorRedirect, $2 );  ufdbFree( $2 );  }
+	        ;
+
+redirect_default_url:
+		  REDIRECT_DEFAULT_URL  QSTRING 
+		     {
+			strcpy( UFDBglobalRedirectURL, $2 );
+
+			strcpy( UFDBglobalRedirectCategoryURL, $2 );
+			strcpy( UFDBglobalRedirectClientCategoryURL, $2 );
+			strcpy( UFDBglobalRedirectNoDefaultACLCategoryURL, $2 );
+			strcpy( UFDBglobalRedirectNoDefaultACLClientCategoryURL, $2 );
+			strcpy( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, $2 );
+
+			ufdbFree( $2 );
+
+			int maxAppendLength = 1024 - strlen(UFDBglobalRedirectURL);
+
+			if (maxAppendLength > 0) {
+			  strncat( UFDBglobalRedirectCategoryURL, UFDB_REDIRECTION_CATEGORY_URL, maxAppendLength );
+			  strncat( UFDBglobalRedirectClientCategoryURL, UFDB_REDIRECTION_CLIENT_CATEGORY_URL, maxAppendLength );
+			  strncat( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CATEGORY_URL, maxAppendLength );
+			  strncat( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CLIENT_CATEGORY_URL, maxAppendLength );
+			  strncat( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_REDIRECT_CLIENT_CATEGORY_URL, maxAppendLength );
+			}
+		     }
 	        ;
 
 log_uncategorised_urls: 
@@ -930,6 +955,7 @@ statement:
 		| redirect_bumped_https
 		| redirect_loading_database
 		| redirect_fatal_error
+		| redirect_default_url
 	     	| analyse_uncategorised
 		| log_uncategorised_urls
 		| safe_search
