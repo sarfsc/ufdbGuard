@@ -496,29 +496,7 @@ redirect_fatal_error:
 
 redirect_default_url:
 		  REDIRECT_DEFAULT_URL  QSTRING 
-		     {
-			strcpy( UFDBglobalRedirectURL, $2 );
-
-			strcpy( UFDBglobalRedirectCategoryURL, $2 );
-			strcpy( UFDBglobalRedirectClientCategoryURL, $2 );
-			strcpy( UFDBglobalRedirectNoDefaultACLCategoryURL, $2 );
-			strcpy( UFDBglobalRedirectNoDefaultACLClientCategoryURL, $2 );
-			strcpy( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, $2 );
-
-			ufdbFree( $2 );
-
-			if (!UFDBglobalRedirectStaticURL) {
-			  int maxAppendLength = 1024 - strlen(UFDBglobalRedirectURL);
-
-			  if (maxAppendLength > 0) {
-			    strncat( UFDBglobalRedirectCategoryURL, UFDB_REDIRECTION_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectClientCategoryURL, UFDB_REDIRECTION_CLIENT_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CLIENT_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_REDIRECT_CLIENT_CATEGORY_URL, maxAppendLength );
-			  }
-			}
-		     }
+		     {  strcpy( UFDBglobalRedirectURL, $2 );  ufdbFree( $2 );  }
 	        ;
 
 log_uncategorised_urls: 
@@ -982,6 +960,32 @@ statement:
 
 %%
 
+static void ApplyGlobalRedirectDefaults()
+{
+  if ( UFDBglobalRedirectURL != NULL ) {
+    strcpy( UFDBglobalRedirectCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectClientCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDBglobalRedirectURL );
+
+    if (!UFDBglobalRedirectStaticURL) {
+      int maxAppendLength = 1024 - strlen(UFDBglobalRedirectURL);
+
+      if (maxAppendLength > 0) {
+	strncat( UFDBglobalRedirectCategoryURL, UFDB_REDIRECTION_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectClientCategoryURL, UFDB_REDIRECTION_CLIENT_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CLIENT_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_REDIRECT_CLIENT_CATEGORY_URL, maxAppendLength );
+      }
+    } else {
+      strcpy( UFDBglobalRedirectHttps, UFDBglobalRedirectURL );
+      strcpy( UFDBglobalRedirectBumpedHttps, UFDBglobalRedirectURL );
+    }
+  }
+}
+
 int sgReadConfig( 
    char *            file )
 {
@@ -1200,6 +1204,7 @@ int sgReadConfig(
       UFDBglobalSquidHelperProtocol = UFDB_SQUID_HELPER_PROTOCOL2;	/* 3.0 - 3.3 */
 
    BuildImplicitPassLists();
+   ApplyGlobalRedirectDefaults();
 
    return 1;
 }

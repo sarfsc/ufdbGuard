@@ -855,34 +855,34 @@ static const yytype_uint16 yyrline[] =
      330,   335,   355,   360,   365,   370,   375,   379,   383,   387,
      391,   395,   399,   403,   407,   411,   415,   419,   423,   427,
      431,   435,   439,   440,   444,   445,   449,   453,   464,   468,
-     469,   473,   478,   483,   488,   493,   498,   525,   532,   537,
-     545,   552,   557,   569,   570,   576,   582,   583,   584,   588,
-     589,   593,   597,   598,   600,   602,   604,   609,   613,   614,
-     618,   619,   620,   621,   622,   623,   624,   625,   626,   627,
-     628,   629,   630,   631,   632,   633,   634,   635,   636,   637,
-     638,   639,   640,   641,   642,   643,   644,   645,   646,   647,
-     648,   649,   650,   651,   652,   653,   654,   655,   656,   657,
-     658,   659,   660,   662,   664,   666,   671,   675,   678,   680,
-     684,   685,   686,   687,   688,   689,   690,   691,   692,   693,
-     694,   695,   696,   698,   700,   702,   704,   705,   706,   707,
-     708,   709,   710,   711,   712,   713,   714,   716,   718,   720,
-     722,   726,   728,   729,   730,   733,   735,   736,   737,   741,
-     744,   745,   749,   750,   751,   755,   757,   756,   761,   763,
-     767,   773,   774,   775,   776,   777,   779,   781,   783,   787,
-     789,   790,   791,   792,   793,   797,   801,   804,   806,   807,
-     808,   809,   810,   814,   817,   819,   820,   824,   826,   831,
-     832,   836,   839,   841,   846,   847,   848,   849,   850,   851,
-     852,   857,   861,   864,   866,   871,   871,   871,   872,   872,
-     872,   873,   873,   873,   874,   874,   875,   879,   879,   880,
-     884,   885,   886,   887,   888,   889,   892,   895,   898,   902,
-     905,   906,   910,   911,   912,   913,   914,   915,   916,   917,
-     918,   919,   920,   921,   922,   923,   924,   925,   926,   927,
-     928,   929,   930,   931,   932,   933,   934,   935,   936,   937,
-     938,   939,   940,   941,   942,   943,   944,   945,   946,   947,
-     948,   949,   950,   951,   952,   953,   954,   955,   956,   957,
-     958,   959,   960,   961,   962,   963,   964,   965,   966,   967,
-     968,   969,   970,   971,   972,   973,   974,   975,   976,   977,
-     978,   979,   980
+     469,   473,   478,   483,   488,   493,   498,   503,   510,   515,
+     523,   530,   535,   547,   548,   554,   560,   561,   562,   566,
+     567,   571,   575,   576,   578,   580,   582,   587,   591,   592,
+     596,   597,   598,   599,   600,   601,   602,   603,   604,   605,
+     606,   607,   608,   609,   610,   611,   612,   613,   614,   615,
+     616,   617,   618,   619,   620,   621,   622,   623,   624,   625,
+     626,   627,   628,   629,   630,   631,   632,   633,   634,   635,
+     636,   637,   638,   640,   642,   644,   649,   653,   656,   658,
+     662,   663,   664,   665,   666,   667,   668,   669,   670,   671,
+     672,   673,   674,   676,   678,   680,   682,   683,   684,   685,
+     686,   687,   688,   689,   690,   691,   692,   694,   696,   698,
+     700,   704,   706,   707,   708,   711,   713,   714,   715,   719,
+     722,   723,   727,   728,   729,   733,   735,   734,   739,   741,
+     745,   751,   752,   753,   754,   755,   757,   759,   761,   765,
+     767,   768,   769,   770,   771,   775,   779,   782,   784,   785,
+     786,   787,   788,   792,   795,   797,   798,   802,   804,   809,
+     810,   814,   817,   819,   824,   825,   826,   827,   828,   829,
+     830,   835,   839,   842,   844,   849,   849,   849,   850,   850,
+     850,   851,   851,   851,   852,   852,   853,   857,   857,   858,
+     862,   863,   864,   865,   866,   867,   870,   873,   876,   880,
+     883,   884,   888,   889,   890,   891,   892,   893,   894,   895,
+     896,   897,   898,   899,   900,   901,   902,   903,   904,   905,
+     906,   907,   908,   909,   910,   911,   912,   913,   914,   915,
+     916,   917,   918,   919,   920,   921,   922,   923,   924,   925,
+     926,   927,   928,   929,   930,   931,   932,   933,   934,   935,
+     936,   937,   938,   939,   940,   941,   942,   943,   944,   945,
+     946,   947,   948,   949,   950,   951,   952,   953,   954,   955,
+     956,   957,   958
 };
 #endif
 
@@ -2539,73 +2539,51 @@ yyreduce:
 
   case 76:
 #line 499 "sg.y" /* yacc.c:1646  */
-    {
-			strcpy( UFDBglobalRedirectURL, (yyvsp[0].string) );
-
-			strcpy( UFDBglobalRedirectCategoryURL, (yyvsp[0].string) );
-			strcpy( UFDBglobalRedirectClientCategoryURL, (yyvsp[0].string) );
-			strcpy( UFDBglobalRedirectNoDefaultACLCategoryURL, (yyvsp[0].string) );
-			strcpy( UFDBglobalRedirectNoDefaultACLClientCategoryURL, (yyvsp[0].string) );
-			strcpy( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, (yyvsp[0].string) );
-
-			ufdbFree( (yyvsp[0].string) );
-
-			if (!UFDBglobalRedirectStaticURL) {
-			  int maxAppendLength = 1024 - strlen(UFDBglobalRedirectURL);
-
-			  if (maxAppendLength > 0) {
-			    strncat( UFDBglobalRedirectCategoryURL, UFDB_REDIRECTION_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectClientCategoryURL, UFDB_REDIRECTION_CLIENT_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CLIENT_CATEGORY_URL, maxAppendLength );
-			    strncat( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_REDIRECT_CLIENT_CATEGORY_URL, maxAppendLength );
-			  }
-			}
-		     }
-#line 2566 "y.tab.c" /* yacc.c:1646  */
+    {  strcpy( UFDBglobalRedirectURL, (yyvsp[0].string) );  ufdbFree( (yyvsp[0].string) );  }
+#line 2544 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 77:
-#line 526 "sg.y" /* yacc.c:1646  */
+#line 504 "sg.y" /* yacc.c:1646  */
     {
 			UFDBglobalLogUncategorisedURLs = (yyvsp[0].integer);   
 		     }
-#line 2574 "y.tab.c" /* yacc.c:1646  */
+#line 2552 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 78:
-#line 533 "sg.y" /* yacc.c:1646  */
+#line 511 "sg.y" /* yacc.c:1646  */
     { 
 			UFDBglobalAnalyseUncategorisedURLs = (yyvsp[0].integer);   
 		     }
-#line 2582 "y.tab.c" /* yacc.c:1646  */
+#line 2560 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 79:
-#line 538 "sg.y" /* yacc.c:1646  */
+#line 516 "sg.y" /* yacc.c:1646  */
     {
 			UFDBglobalAnalyseUncategorisedURLs = atoi( (yyvsp[0].string) ); 
 			ufdbFree( (yyvsp[0].string) ); 
 		     }
-#line 2591 "y.tab.c" /* yacc.c:1646  */
+#line 2569 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 80:
-#line 546 "sg.y" /* yacc.c:1646  */
+#line 524 "sg.y" /* yacc.c:1646  */
     {
 		        UFDBglobalStripDomainFromUsername = (yyvsp[0].integer);
 		     }
-#line 2599 "y.tab.c" /* yacc.c:1646  */
+#line 2577 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 81:
-#line 553 "sg.y" /* yacc.c:1646  */
+#line 531 "sg.y" /* yacc.c:1646  */
     { UFDBglobalSafeSearch = (yyvsp[0].integer); }
-#line 2605 "y.tab.c" /* yacc.c:1646  */
+#line 2583 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 82:
-#line 558 "sg.y" /* yacc.c:1646  */
+#line 536 "sg.y" /* yacc.c:1646  */
     { 
 		       UFDBglobalMaxLogfileSize = strtoul( (yyvsp[0].string), NULL, 10 );
 		       ufdbFree( (yyvsp[0].string) );
@@ -2614,888 +2592,888 @@ yyreduce:
 		       if (UFDBglobalMaxLogfileSize > 2000000000)		/* maximum is 2 GB */
 		          UFDBglobalMaxLogfileSize = 2000000000;
 		     }
-#line 2618 "y.tab.c" /* yacc.c:1646  */
+#line 2596 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 83:
-#line 569 "sg.y" /* yacc.c:1646  */
+#line 547 "sg.y" /* yacc.c:1646  */
     { UFDBglobalHttpdPort = atoi( (yyvsp[0].string) ); ufdbFree( (yyvsp[0].string) ); }
-#line 2624 "y.tab.c" /* yacc.c:1646  */
+#line 2602 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 84:
-#line 570 "sg.y" /* yacc.c:1646  */
+#line 548 "sg.y" /* yacc.c:1646  */
     { if (strcmp((yyvsp[0].string),"all")== 0)
 						strcpy( UFDBglobalHttpdInterface, "all" );    
 					     else
 					        ufdbLogFatalError( "http-server interface must be \"all\" or IP address" );
 					     ufdbFree( (yyvsp[0].string) );
 					   }
-#line 2635 "y.tab.c" /* yacc.c:1646  */
+#line 2613 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 85:
-#line 576 "sg.y" /* yacc.c:1646  */
+#line 554 "sg.y" /* yacc.c:1646  */
     { if (strcmp((yyvsp[0].string),"all")== 0)
 						strcpy( UFDBglobalHttpdInterface, "all" );    
 					     else
 					        ufdbLogFatalError( "http-server interface must be \"all\" or IP address" );
 					     ufdbFree( (yyvsp[0].string) );
 					   }
-#line 2646 "y.tab.c" /* yacc.c:1646  */
+#line 2624 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 86:
-#line 582 "sg.y" /* yacc.c:1646  */
+#line 560 "sg.y" /* yacc.c:1646  */
     { strcpy( UFDBglobalHttpdInterface, (yyvsp[0].string) );       ufdbFree( (yyvsp[0].string) ); }
-#line 2652 "y.tab.c" /* yacc.c:1646  */
+#line 2630 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 87:
-#line 583 "sg.y" /* yacc.c:1646  */
+#line 561 "sg.y" /* yacc.c:1646  */
     { strcpy( UFDBglobalHttpdImagesDirectory, (yyvsp[0].string) ); ufdbFree( (yyvsp[0].string) ); }
-#line 2658 "y.tab.c" /* yacc.c:1646  */
+#line 2636 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 88:
-#line 584 "sg.y" /* yacc.c:1646  */
+#line 562 "sg.y" /* yacc.c:1646  */
     { strcpy( UFDBglobalHttpdImagesDirectory, (yyvsp[0].string) ); ufdbFree( (yyvsp[0].string) ); }
-#line 2664 "y.tab.c" /* yacc.c:1646  */
+#line 2642 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 92:
-#line 597 "sg.y" /* yacc.c:1646  */
+#line 575 "sg.y" /* yacc.c:1646  */
     { ufdbCategory( (yyvsp[0].string) ); }
-#line 2670 "y.tab.c" /* yacc.c:1646  */
+#line 2648 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 93:
-#line 598 "sg.y" /* yacc.c:1646  */
+#line 576 "sg.y" /* yacc.c:1646  */
     { ufdbCategory( ufdbStrdup("aggressive") );
 		                         yyerror( (char *) "\"aggressive\" is a keyword and must be surrounded by quotes" ); }
-#line 2677 "y.tab.c" /* yacc.c:1646  */
+#line 2655 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 94:
-#line 600 "sg.y" /* yacc.c:1646  */
+#line 578 "sg.y" /* yacc.c:1646  */
     { ufdbCategory( ufdbStrdup("allow") );
 		                         yyerror( (char *) "\"allow\" is a keyword and must be surrounded by quotes" ); }
-#line 2684 "y.tab.c" /* yacc.c:1646  */
+#line 2662 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 95:
-#line 602 "sg.y" /* yacc.c:1646  */
+#line 580 "sg.y" /* yacc.c:1646  */
     { ufdbCategory( ufdbStrdup("deny") );
 		                         yyerror( (char *) "\"deny\" is a keyword and must be surrounded by quotes" ); }
-#line 2691 "y.tab.c" /* yacc.c:1646  */
+#line 2669 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 96:
-#line 604 "sg.y" /* yacc.c:1646  */
+#line 582 "sg.y" /* yacc.c:1646  */
     { ufdbCategory( ufdbStrdup("syntax-error") );
 		                         yyerror( (char *) "erroneous category definition.  Perhaps the category ID is a reserved word?" ); }
-#line 2698 "y.tab.c" /* yacc.c:1646  */
+#line 2676 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 97:
-#line 610 "sg.y" /* yacc.c:1646  */
+#line 588 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryEnd(); }
-#line 2704 "y.tab.c" /* yacc.c:1646  */
+#line 2682 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 100:
-#line 618 "sg.y" /* yacc.c:1646  */
+#line 596 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryDomainList( (yyvsp[0].string) ); }
-#line 2710 "y.tab.c" /* yacc.c:1646  */
+#line 2688 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 101:
-#line 619 "sg.y" /* yacc.c:1646  */
+#line 597 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryDomainList( (yyvsp[0].string) ); }
-#line 2716 "y.tab.c" /* yacc.c:1646  */
+#line 2694 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 102:
-#line 620 "sg.y" /* yacc.c:1646  */
+#line 598 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryDomainList( NULL ); }
-#line 2722 "y.tab.c" /* yacc.c:1646  */
+#line 2700 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 103:
-#line 621 "sg.y" /* yacc.c:1646  */
+#line 599 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExecDomainList( (yyvsp[0].string) ); }
-#line 2728 "y.tab.c" /* yacc.c:1646  */
+#line 2706 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 104:
-#line 622 "sg.y" /* yacc.c:1646  */
+#line 600 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryUrlList( (yyvsp[0].string) ); }
-#line 2734 "y.tab.c" /* yacc.c:1646  */
+#line 2712 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 105:
-#line 623 "sg.y" /* yacc.c:1646  */
+#line 601 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryUrlList( (yyvsp[0].string) ); }
-#line 2740 "y.tab.c" /* yacc.c:1646  */
+#line 2718 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 106:
-#line 624 "sg.y" /* yacc.c:1646  */
+#line 602 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryUrlList( NULL ); }
-#line 2746 "y.tab.c" /* yacc.c:1646  */
+#line 2724 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 107:
-#line 625 "sg.y" /* yacc.c:1646  */
+#line 603 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExpressionList( (yyvsp[0].string), "n" ); }
-#line 2752 "y.tab.c" /* yacc.c:1646  */
+#line 2730 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 108:
-#line 626 "sg.y" /* yacc.c:1646  */
+#line 604 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExpressionList( (yyvsp[0].string), "n" ); }
-#line 2758 "y.tab.c" /* yacc.c:1646  */
+#line 2736 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 109:
-#line 627 "sg.y" /* yacc.c:1646  */
+#line 605 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExpressionList( NULL, NULL ); }
-#line 2764 "y.tab.c" /* yacc.c:1646  */
+#line 2742 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 110:
-#line 628 "sg.y" /* yacc.c:1646  */
+#line 606 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExpressionList( (yyvsp[0].string), "i" ); }
-#line 2770 "y.tab.c" /* yacc.c:1646  */
+#line 2748 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 111:
-#line 629 "sg.y" /* yacc.c:1646  */
+#line 607 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExpressionList( (yyvsp[0].string), "i" ); }
-#line 2776 "y.tab.c" /* yacc.c:1646  */
+#line 2754 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 112:
-#line 630 "sg.y" /* yacc.c:1646  */
+#line 608 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExpressionList( (yyvsp[0].string), "i" ); }
-#line 2782 "y.tab.c" /* yacc.c:1646  */
+#line 2760 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 113:
-#line 631 "sg.y" /* yacc.c:1646  */
+#line 609 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryExpressionList( (yyvsp[0].string), "i" ); }
-#line 2788 "y.tab.c" /* yacc.c:1646  */
+#line 2766 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 114:
-#line 632 "sg.y" /* yacc.c:1646  */
+#line 610 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryCACertsFile( (yyvsp[0].string) ); }
-#line 2794 "y.tab.c" /* yacc.c:1646  */
+#line 2772 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 115:
-#line 633 "sg.y" /* yacc.c:1646  */
+#line 611 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryCACertsFile( (yyvsp[0].string) ); }
-#line 2800 "y.tab.c" /* yacc.c:1646  */
+#line 2778 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 116:
-#line 634 "sg.y" /* yacc.c:1646  */
+#line 612 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryCACertsDir( (yyvsp[0].string) ); }
-#line 2806 "y.tab.c" /* yacc.c:1646  */
+#line 2784 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 117:
-#line 635 "sg.y" /* yacc.c:1646  */
+#line 613 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryCACertsDir( (yyvsp[0].string) ); }
-#line 2812 "y.tab.c" /* yacc.c:1646  */
+#line 2790 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 118:
-#line 636 "sg.y" /* yacc.c:1646  */
+#line 614 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryRedirect( (yyvsp[0].string) ); }
-#line 2818 "y.tab.c" /* yacc.c:1646  */
+#line 2796 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 119:
-#line 637 "sg.y" /* yacc.c:1646  */
+#line 615 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryRedirect( (yyvsp[0].string) ); }
-#line 2824 "y.tab.c" /* yacc.c:1646  */
+#line 2802 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 120:
-#line 638 "sg.y" /* yacc.c:1646  */
+#line 616 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryRewrite( (yyvsp[0].string) ); }
-#line 2830 "y.tab.c" /* yacc.c:1646  */
+#line 2808 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 121:
-#line 639 "sg.y" /* yacc.c:1646  */
+#line 617 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryRewrite( (yyvsp[0].string) ); }
-#line 2836 "y.tab.c" /* yacc.c:1646  */
+#line 2814 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 122:
-#line 640 "sg.y" /* yacc.c:1646  */
+#line 618 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryTime( (yyvsp[0].string), UFDB_ACL_WITHIN ); }
-#line 2842 "y.tab.c" /* yacc.c:1646  */
+#line 2820 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 123:
-#line 641 "sg.y" /* yacc.c:1646  */
+#line 619 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryTime( (yyvsp[0].string), UFDB_ACL_OUTSIDE ); }
-#line 2848 "y.tab.c" /* yacc.c:1646  */
+#line 2826 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 124:
-#line 642 "sg.y" /* yacc.c:1646  */
+#line 620 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryBlockConnect( (yyvsp[0].integer) ); }
-#line 2854 "y.tab.c" /* yacc.c:1646  */
+#line 2832 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 125:
-#line 643 "sg.y" /* yacc.c:1646  */
+#line 621 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_SAFE_SEARCH );  }
-#line 2860 "y.tab.c" /* yacc.c:1646  */
+#line 2838 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 126:
-#line 644 "sg.y" /* yacc.c:1646  */
+#line 622 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_YOUTUBE_EDUFILTER );  }
-#line 2866 "y.tab.c" /* yacc.c:1646  */
+#line 2844 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 127:
-#line 645 "sg.y" /* yacc.c:1646  */
+#line 623 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption(  1, UFDB_OPT_HTTPS_WITH_HOSTNAME );  }
-#line 2872 "y.tab.c" /* yacc.c:1646  */
+#line 2850 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 128:
-#line 646 "sg.y" /* yacc.c:1646  */
+#line 624 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_HTTPS_WITH_HOSTNAME );  }
-#line 2878 "y.tab.c" /* yacc.c:1646  */
+#line 2856 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 129:
-#line 647 "sg.y" /* yacc.c:1646  */
+#line 625 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption(  1, UFDB_OPT_HTTPS_OFFICAL_CERTIFICATE );  }
-#line 2884 "y.tab.c" /* yacc.c:1646  */
+#line 2862 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 130:
-#line 648 "sg.y" /* yacc.c:1646  */
+#line 626 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_HTTPS_OFFICAL_CERTIFICATE );  }
-#line 2890 "y.tab.c" /* yacc.c:1646  */
+#line 2868 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 131:
-#line 649 "sg.y" /* yacc.c:1646  */
+#line 627 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_PROHIBIT_INSECURE_SSLV2 );  }
-#line 2896 "y.tab.c" /* yacc.c:1646  */
+#line 2874 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 132:
-#line 650 "sg.y" /* yacc.c:1646  */
+#line 628 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_PROHIBIT_INSECURE_SSLV3 );  }
-#line 2902 "y.tab.c" /* yacc.c:1646  */
+#line 2880 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 133:
-#line 651 "sg.y" /* yacc.c:1646  */
+#line 629 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_SKYPE_OVER_HTTPS );  }
-#line 2908 "y.tab.c" /* yacc.c:1646  */
+#line 2886 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 134:
-#line 652 "sg.y" /* yacc.c:1646  */
+#line 630 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_GTALK_OVER_HTTPS );  }
-#line 2914 "y.tab.c" /* yacc.c:1646  */
+#line 2892 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 135:
-#line 653 "sg.y" /* yacc.c:1646  */
+#line 631 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_YAHOOMSG_OVER_HTTPS );  }
-#line 2920 "y.tab.c" /* yacc.c:1646  */
+#line 2898 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 136:
-#line 654 "sg.y" /* yacc.c:1646  */
+#line 632 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_AIM_OVER_HTTPS );  }
-#line 2926 "y.tab.c" /* yacc.c:1646  */
+#line 2904 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 137:
-#line 655 "sg.y" /* yacc.c:1646  */
+#line 633 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_FBCHAT_OVER_HTTPS );  }
-#line 2932 "y.tab.c" /* yacc.c:1646  */
+#line 2910 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 138:
-#line 656 "sg.y" /* yacc.c:1646  */
+#line 634 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_CITRIXONLINE_OVER_HTTPS );  }
-#line 2938 "y.tab.c" /* yacc.c:1646  */
+#line 2916 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 139:
-#line 657 "sg.y" /* yacc.c:1646  */
+#line 635 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_ANYDESK_OVER_HTTPS );  }
-#line 2944 "y.tab.c" /* yacc.c:1646  */
+#line 2922 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 140:
-#line 658 "sg.y" /* yacc.c:1646  */
+#line 636 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_TEAMVIEWER_OVER_HTTPS );  }
-#line 2950 "y.tab.c" /* yacc.c:1646  */
+#line 2928 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 141:
-#line 659 "sg.y" /* yacc.c:1646  */
+#line 637 "sg.y" /* yacc.c:1646  */
     { ufdbCategoryOption( (yyvsp[0].integer), UFDB_OPT_UNKNOWN_PROTOCOL_OVER_HTTPS );  }
-#line 2956 "y.tab.c" /* yacc.c:1646  */
+#line 2934 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 142:
-#line 660 "sg.y" /* yacc.c:1646  */
+#line 638 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 		                                  ufdbFree( (yyvsp[0].string) ); }
-#line 2963 "y.tab.c" /* yacc.c:1646  */
+#line 2941 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 143:
-#line 662 "sg.y" /* yacc.c:1646  */
+#line 640 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 		                                  ufdbFree( (yyvsp[0].string) ); }
-#line 2970 "y.tab.c" /* yacc.c:1646  */
+#line 2948 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 144:
-#line 664 "sg.y" /* yacc.c:1646  */
+#line 642 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 		                                  ufdbFree( (yyvsp[0].string) ); }
-#line 2977 "y.tab.c" /* yacc.c:1646  */
+#line 2955 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 145:
-#line 666 "sg.y" /* yacc.c:1646  */
+#line 644 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 		                                  ufdbFree( (yyvsp[0].string) ); }
-#line 2984 "y.tab.c" /* yacc.c:1646  */
+#line 2962 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 146:
-#line 671 "sg.y" /* yacc.c:1646  */
+#line 649 "sg.y" /* yacc.c:1646  */
     { defSource( (yyvsp[0].string) ); }
-#line 2990 "y.tab.c" /* yacc.c:1646  */
+#line 2968 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 147:
-#line 675 "sg.y" /* yacc.c:1646  */
+#line 653 "sg.y" /* yacc.c:1646  */
     { defSourceEnd(); }
-#line 2996 "y.tab.c" /* yacc.c:1646  */
+#line 2974 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 153:
-#line 687 "sg.y" /* yacc.c:1646  */
+#line 665 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserList( (yyvsp[0].string) ); }
-#line 3002 "y.tab.c" /* yacc.c:1646  */
+#line 2980 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 154:
-#line 688 "sg.y" /* yacc.c:1646  */
+#line 666 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserList( (yyvsp[0].string) ); }
-#line 3008 "y.tab.c" /* yacc.c:1646  */
+#line 2986 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 155:
-#line 689 "sg.y" /* yacc.c:1646  */
+#line 667 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserList( (yyvsp[0].string) ); }
-#line 3014 "y.tab.c" /* yacc.c:1646  */
+#line 2992 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 156:
-#line 690 "sg.y" /* yacc.c:1646  */
+#line 668 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserList( (yyvsp[0].string) ); }
-#line 3020 "y.tab.c" /* yacc.c:1646  */
+#line 2998 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 157:
-#line 691 "sg.y" /* yacc.c:1646  */
+#line 669 "sg.y" /* yacc.c:1646  */
     { ufdbSourceExecUserList( (yyvsp[0].string) ); }
-#line 3026 "y.tab.c" /* yacc.c:1646  */
+#line 3004 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 158:
-#line 692 "sg.y" /* yacc.c:1646  */
+#line 670 "sg.y" /* yacc.c:1646  */
     { ufdbSourceGroup( UFDB_GROUPTYPE_UNIX, (yyvsp[0].string) ); }
-#line 3032 "y.tab.c" /* yacc.c:1646  */
+#line 3010 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 159:
-#line 693 "sg.y" /* yacc.c:1646  */
+#line 671 "sg.y" /* yacc.c:1646  */
     { ufdbSourceGroup( UFDB_GROUPTYPE_UNIX, (yyvsp[0].string) ); }
-#line 3038 "y.tab.c" /* yacc.c:1646  */
+#line 3016 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 160:
-#line 694 "sg.y" /* yacc.c:1646  */
+#line 672 "sg.y" /* yacc.c:1646  */
     { ufdbSourceGroup( UFDB_GROUPTYPE_UNIX, (yyvsp[0].string) ); }
-#line 3044 "y.tab.c" /* yacc.c:1646  */
+#line 3022 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 161:
-#line 695 "sg.y" /* yacc.c:1646  */
+#line 673 "sg.y" /* yacc.c:1646  */
     { ufdbSourceGroup( UFDB_GROUPTYPE_UNIX, (yyvsp[0].string) ); }
-#line 3050 "y.tab.c" /* yacc.c:1646  */
+#line 3028 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 162:
-#line 696 "sg.y" /* yacc.c:1646  */
+#line 674 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserQuota( (yyvsp[-2].string), (yyvsp[-1].string), "3600" );  
 		                                   ufdbFree( (yyvsp[-2].string) ); ufdbFree( (yyvsp[-1].string) ); }
-#line 3057 "y.tab.c" /* yacc.c:1646  */
+#line 3035 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 163:
-#line 698 "sg.y" /* yacc.c:1646  */
+#line 676 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserQuota( (yyvsp[-2].string), (yyvsp[-1].string), "86400" );  
 		                                   ufdbFree( (yyvsp[-2].string) ); ufdbFree( (yyvsp[-1].string) ); }
-#line 3064 "y.tab.c" /* yacc.c:1646  */
+#line 3042 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 164:
-#line 700 "sg.y" /* yacc.c:1646  */
+#line 678 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserQuota( (yyvsp[-2].string), (yyvsp[-1].string), "604800" );  
 		                                   ufdbFree( (yyvsp[-2].string) ); ufdbFree( (yyvsp[-1].string) ); }
-#line 3071 "y.tab.c" /* yacc.c:1646  */
+#line 3049 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 165:
-#line 702 "sg.y" /* yacc.c:1646  */
+#line 680 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUserQuota( (yyvsp[-2].string), (yyvsp[-1].string), (yyvsp[0].string) );  
 		                                   ufdbFree( (yyvsp[-2].string) ); ufdbFree( (yyvsp[-1].string) ); ufdbFree( (yyvsp[0].string) ); }
-#line 3078 "y.tab.c" /* yacc.c:1646  */
+#line 3056 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 167:
-#line 705 "sg.y" /* yacc.c:1646  */
+#line 683 "sg.y" /* yacc.c:1646  */
     { defSourceIPV4List( (yyvsp[0].string) ); }
-#line 3084 "y.tab.c" /* yacc.c:1646  */
+#line 3062 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 168:
-#line 706 "sg.y" /* yacc.c:1646  */
+#line 684 "sg.y" /* yacc.c:1646  */
     { defSourceIPV4List( (yyvsp[0].string) ); }
-#line 3090 "y.tab.c" /* yacc.c:1646  */
+#line 3068 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 170:
-#line 708 "sg.y" /* yacc.c:1646  */
+#line 686 "sg.y" /* yacc.c:1646  */
     { defSourceIPV6List( (yyvsp[0].string) ); }
-#line 3096 "y.tab.c" /* yacc.c:1646  */
+#line 3074 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 171:
-#line 709 "sg.y" /* yacc.c:1646  */
+#line 687 "sg.y" /* yacc.c:1646  */
     { defSourceIPV6List( (yyvsp[0].string) ); }
-#line 3102 "y.tab.c" /* yacc.c:1646  */
+#line 3080 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 172:
-#line 710 "sg.y" /* yacc.c:1646  */
+#line 688 "sg.y" /* yacc.c:1646  */
     { ufdbSourceEval( UFDB_EVAL_AND ); }
-#line 3108 "y.tab.c" /* yacc.c:1646  */
+#line 3086 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 173:
-#line 711 "sg.y" /* yacc.c:1646  */
+#line 689 "sg.y" /* yacc.c:1646  */
     { ufdbSourceEval( UFDB_EVAL_OR ); }
-#line 3114 "y.tab.c" /* yacc.c:1646  */
+#line 3092 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 174:
-#line 712 "sg.y" /* yacc.c:1646  */
+#line 690 "sg.y" /* yacc.c:1646  */
     { defSourceTime( (yyvsp[0].string), UFDB_ACL_WITHIN ); }
-#line 3120 "y.tab.c" /* yacc.c:1646  */
+#line 3098 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 175:
-#line 713 "sg.y" /* yacc.c:1646  */
+#line 691 "sg.y" /* yacc.c:1646  */
     { defSourceTime( (yyvsp[0].string), UFDB_ACL_OUTSIDE ); }
-#line 3126 "y.tab.c" /* yacc.c:1646  */
+#line 3104 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 176:
-#line 714 "sg.y" /* yacc.c:1646  */
+#line 692 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						   ufdbFree( (yyvsp[0].string) ); }
-#line 3133 "y.tab.c" /* yacc.c:1646  */
+#line 3111 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 177:
-#line 716 "sg.y" /* yacc.c:1646  */
+#line 694 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						   ufdbFree( (yyvsp[0].string) ); }
-#line 3140 "y.tab.c" /* yacc.c:1646  */
+#line 3118 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 178:
-#line 718 "sg.y" /* yacc.c:1646  */
+#line 696 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						   ufdbFree( (yyvsp[0].string) ); }
-#line 3147 "y.tab.c" /* yacc.c:1646  */
+#line 3125 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 179:
-#line 720 "sg.y" /* yacc.c:1646  */
+#line 698 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						   ufdbFree( (yyvsp[0].string) ); }
-#line 3154 "y.tab.c" /* yacc.c:1646  */
+#line 3132 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 180:
-#line 722 "sg.y" /* yacc.c:1646  */
+#line 700 "sg.y" /* yacc.c:1646  */
     { lastSource->cont_search = 1; }
-#line 3160 "y.tab.c" /* yacc.c:1646  */
+#line 3138 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 182:
-#line 728 "sg.y" /* yacc.c:1646  */
+#line 706 "sg.y" /* yacc.c:1646  */
     { defSourceDomain( (yyvsp[0].string) ); }
-#line 3166 "y.tab.c" /* yacc.c:1646  */
+#line 3144 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 183:
-#line 729 "sg.y" /* yacc.c:1646  */
+#line 707 "sg.y" /* yacc.c:1646  */
     { defSourceDomain( (yyvsp[0].string) ); }
-#line 3172 "y.tab.c" /* yacc.c:1646  */
+#line 3150 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 186:
-#line 735 "sg.y" /* yacc.c:1646  */
+#line 713 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUser( (yyvsp[0].string) ); }
-#line 3178 "y.tab.c" /* yacc.c:1646  */
+#line 3156 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 187:
-#line 736 "sg.y" /* yacc.c:1646  */
+#line 714 "sg.y" /* yacc.c:1646  */
     { ufdbSourceUser( (yyvsp[0].string) ); }
-#line 3184 "y.tab.c" /* yacc.c:1646  */
+#line 3162 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 192:
-#line 749 "sg.y" /* yacc.c:1646  */
+#line 727 "sg.y" /* yacc.c:1646  */
     { sgAcl( (yyvsp[-1].string), NULL, UFDB_ACL_NONE );  }
-#line 3190 "y.tab.c" /* yacc.c:1646  */
+#line 3168 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 193:
-#line 750 "sg.y" /* yacc.c:1646  */
+#line 728 "sg.y" /* yacc.c:1646  */
     { sgAcl( (yyvsp[-3].string), (yyvsp[-1].string), UFDB_ACL_WITHIN );  }
-#line 3196 "y.tab.c" /* yacc.c:1646  */
+#line 3174 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 194:
-#line 751 "sg.y" /* yacc.c:1646  */
+#line 729 "sg.y" /* yacc.c:1646  */
     { sgAcl( (yyvsp[-3].string), (yyvsp[-1].string), UFDB_ACL_OUTSIDE ); }
-#line 3202 "y.tab.c" /* yacc.c:1646  */
+#line 3180 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 196:
-#line 757 "sg.y" /* yacc.c:1646  */
+#line 735 "sg.y" /* yacc.c:1646  */
     { sgAcl( NULL, NULL, UFDB_ACL_ELSE );    }
-#line 3208 "y.tab.c" /* yacc.c:1646  */
+#line 3186 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 200:
-#line 767 "sg.y" /* yacc.c:1646  */
+#line 745 "sg.y" /* yacc.c:1646  */
     { if (lastAcl != NULL  &&  lastAcl->pass == NULL) 
                                                   {
                                                      ufdbLogMessage( "line %d: acl has an empty pass statement.  Adding 'any'.", lineno );
                                                      sgAclSetValue( "pass", ufdbStrdup("any"), 1 ); 
                                                   }
                                                 }
-#line 3219 "y.tab.c" /* yacc.c:1646  */
+#line 3197 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 201:
-#line 773 "sg.y" /* yacc.c:1646  */
+#line 751 "sg.y" /* yacc.c:1646  */
     { sgAclSetValue( "rewrite", (yyvsp[0].string), 0 ); }
-#line 3225 "y.tab.c" /* yacc.c:1646  */
+#line 3203 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 202:
-#line 774 "sg.y" /* yacc.c:1646  */
+#line 752 "sg.y" /* yacc.c:1646  */
     { sgAclSetValue( "rewrite", (yyvsp[0].string), 0 ); }
-#line 3231 "y.tab.c" /* yacc.c:1646  */
+#line 3209 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 203:
-#line 775 "sg.y" /* yacc.c:1646  */
+#line 753 "sg.y" /* yacc.c:1646  */
     { sgAclSetValue( "redirect", (yyvsp[0].string), 0 ); }
-#line 3237 "y.tab.c" /* yacc.c:1646  */
+#line 3215 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 204:
-#line 776 "sg.y" /* yacc.c:1646  */
+#line 754 "sg.y" /* yacc.c:1646  */
     { sgAclSetValue( "redirect", (yyvsp[0].string), 0 ); }
-#line 3243 "y.tab.c" /* yacc.c:1646  */
+#line 3221 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 205:
-#line 777 "sg.y" /* yacc.c:1646  */
+#line 755 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						  ufdbFree( (yyvsp[0].string) ); }
-#line 3250 "y.tab.c" /* yacc.c:1646  */
+#line 3228 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 206:
-#line 779 "sg.y" /* yacc.c:1646  */
+#line 757 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						  ufdbFree( (yyvsp[0].string) ); }
-#line 3257 "y.tab.c" /* yacc.c:1646  */
+#line 3235 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 207:
-#line 781 "sg.y" /* yacc.c:1646  */
+#line 759 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						  ufdbFree( (yyvsp[0].string) ); }
-#line 3264 "y.tab.c" /* yacc.c:1646  */
+#line 3242 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 208:
-#line 783 "sg.y" /* yacc.c:1646  */
+#line 761 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 
 						  ufdbFree( (yyvsp[0].string) ); }
-#line 3271 "y.tab.c" /* yacc.c:1646  */
+#line 3249 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 210:
-#line 789 "sg.y" /* yacc.c:1646  */
+#line 767 "sg.y" /* yacc.c:1646  */
     { yyerror( (char *) "\"aggressive\" is a keyword and must be surrounded by quotes" );  }
-#line 3277 "y.tab.c" /* yacc.c:1646  */
+#line 3255 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 211:
-#line 790 "sg.y" /* yacc.c:1646  */
+#line 768 "sg.y" /* yacc.c:1646  */
     { sgAclSetValue( "pass", (yyvsp[0].string), 1 ); }
-#line 3283 "y.tab.c" /* yacc.c:1646  */
+#line 3261 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 212:
-#line 791 "sg.y" /* yacc.c:1646  */
+#line 769 "sg.y" /* yacc.c:1646  */
     { yyerror( (char *) "\"aggressive\" is a keyword and must be surrounded by quotes" );  }
-#line 3289 "y.tab.c" /* yacc.c:1646  */
+#line 3267 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 213:
-#line 792 "sg.y" /* yacc.c:1646  */
+#line 770 "sg.y" /* yacc.c:1646  */
     { sgAclSetValue( "pass", (yyvsp[0].string), 0 ); }
-#line 3295 "y.tab.c" /* yacc.c:1646  */
+#line 3273 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 215:
-#line 797 "sg.y" /* yacc.c:1646  */
+#line 775 "sg.y" /* yacc.c:1646  */
     { sgIpv4( (yyvsp[0].string) ); ufdbFree( (yyvsp[0].string) ); }
-#line 3301 "y.tab.c" /* yacc.c:1646  */
+#line 3279 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 216:
-#line 801 "sg.y" /* yacc.c:1646  */
+#line 779 "sg.y" /* yacc.c:1646  */
     { sgIpv4( (yyvsp[0].string) ); ufdbFree( (yyvsp[0].string) ); }
-#line 3307 "y.tab.c" /* yacc.c:1646  */
+#line 3285 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 218:
-#line 806 "sg.y" /* yacc.c:1646  */
+#line 784 "sg.y" /* yacc.c:1646  */
     { sgIpv4( "255.255.255.255" );  sgSetIpType( SG_IPTYPE_HOST, NULL, 0 ); }
-#line 3313 "y.tab.c" /* yacc.c:1646  */
+#line 3291 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 219:
-#line 807 "sg.y" /* yacc.c:1646  */
+#line 785 "sg.y" /* yacc.c:1646  */
     { sgSetIpType( SG_IPTYPE_CIDR, NULL, 0 ); }
-#line 3319 "y.tab.c" /* yacc.c:1646  */
+#line 3297 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 220:
-#line 808 "sg.y" /* yacc.c:1646  */
+#line 786 "sg.y" /* yacc.c:1646  */
     { sgSetIpType( SG_IPTYPE_CLASS, NULL, 0 ); }
-#line 3325 "y.tab.c" /* yacc.c:1646  */
+#line 3303 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 221:
-#line 809 "sg.y" /* yacc.c:1646  */
+#line 787 "sg.y" /* yacc.c:1646  */
     { sgSetIpType( SG_IPTYPE_RANGE, NULL, 0 ); }
-#line 3331 "y.tab.c" /* yacc.c:1646  */
+#line 3309 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 223:
-#line 814 "sg.y" /* yacc.c:1646  */
+#line 792 "sg.y" /* yacc.c:1646  */
     { sgIpv4( (yyvsp[0].string) );  ufdbFree( (yyvsp[0].string) );  }
-#line 3337 "y.tab.c" /* yacc.c:1646  */
+#line 3315 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 227:
-#line 824 "sg.y" /* yacc.c:1646  */
+#line 802 "sg.y" /* yacc.c:1646  */
     { sgIpv6( (yyvsp[0].string), SG_IPV6TYPE_HOST, UFDBglobalConfigFile, lineno );
                                                   ufdbFree( (yyvsp[0].string) );  }
-#line 3344 "y.tab.c" /* yacc.c:1646  */
+#line 3322 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 228:
-#line 826 "sg.y" /* yacc.c:1646  */
+#line 804 "sg.y" /* yacc.c:1646  */
     { sgIpv6( (yyvsp[0].string), SG_IPV6TYPE_CIDR, UFDBglobalConfigFile, lineno );
                                                   ufdbFree( (yyvsp[0].string) );  }
-#line 3351 "y.tab.c" /* yacc.c:1646  */
+#line 3329 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 229:
-#line 831 "sg.y" /* yacc.c:1646  */
+#line 809 "sg.y" /* yacc.c:1646  */
     { sgRewrite( (yyvsp[0].string) ); }
-#line 3357 "y.tab.c" /* yacc.c:1646  */
+#line 3335 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 230:
-#line 832 "sg.y" /* yacc.c:1646  */
+#line 810 "sg.y" /* yacc.c:1646  */
     { sgRewrite( (yyvsp[0].string) ); }
-#line 3363 "y.tab.c" /* yacc.c:1646  */
+#line 3341 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 234:
-#line 846 "sg.y" /* yacc.c:1646  */
+#line 824 "sg.y" /* yacc.c:1646  */
     { sgRewriteSubstitute( (yyvsp[0].string) ); ufdbFree( (yyvsp[0].string) ); }
-#line 3369 "y.tab.c" /* yacc.c:1646  */
+#line 3347 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 235:
-#line 847 "sg.y" /* yacc.c:1646  */
+#line 825 "sg.y" /* yacc.c:1646  */
     { sgRewriteTime( (yyvsp[0].string), UFDB_ACL_WITHIN ); }
-#line 3375 "y.tab.c" /* yacc.c:1646  */
+#line 3353 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 236:
-#line 848 "sg.y" /* yacc.c:1646  */
+#line 826 "sg.y" /* yacc.c:1646  */
     { sgRewriteTime( (yyvsp[0].string), UFDB_ACL_OUTSIDE ); }
-#line 3381 "y.tab.c" /* yacc.c:1646  */
+#line 3359 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 237:
-#line 849 "sg.y" /* yacc.c:1646  */
+#line 827 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 							      ufdbFree( (yyvsp[0].string) ); }
-#line 3387 "y.tab.c" /* yacc.c:1646  */
+#line 3365 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 238:
-#line 850 "sg.y" /* yacc.c:1646  */
+#line 828 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 							      ufdbFree( (yyvsp[0].string) ); }
-#line 3393 "y.tab.c" /* yacc.c:1646  */
+#line 3371 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 239:
-#line 851 "sg.y" /* yacc.c:1646  */
+#line 829 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 							      ufdbFree( (yyvsp[0].string) ); }
-#line 3399 "y.tab.c" /* yacc.c:1646  */
+#line 3377 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 240:
-#line 852 "sg.y" /* yacc.c:1646  */
+#line 830 "sg.y" /* yacc.c:1646  */
     { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, (yyvsp[0].string) ); 							      ufdbFree( (yyvsp[0].string) ); }
-#line 3405 "y.tab.c" /* yacc.c:1646  */
+#line 3383 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 241:
-#line 857 "sg.y" /* yacc.c:1646  */
+#line 835 "sg.y" /* yacc.c:1646  */
     { sgTime( (yyvsp[0].string) ); }
-#line 3411 "y.tab.c" /* yacc.c:1646  */
+#line 3389 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 245:
-#line 871 "sg.y" /* yacc.c:1646  */
+#line 849 "sg.y" /* yacc.c:1646  */
     { sgTimeElementInit(); }
-#line 3417 "y.tab.c" /* yacc.c:1646  */
+#line 3395 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 246:
-#line 871 "sg.y" /* yacc.c:1646  */
+#line 849 "sg.y" /* yacc.c:1646  */
     { sgTimeElementAdd((yyvsp[0].string),T_WEEKDAY); }
-#line 3423 "y.tab.c" /* yacc.c:1646  */
+#line 3401 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 248:
-#line 872 "sg.y" /* yacc.c:1646  */
+#line 850 "sg.y" /* yacc.c:1646  */
     { sgTimeElementInit(); }
-#line 3429 "y.tab.c" /* yacc.c:1646  */
+#line 3407 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 249:
-#line 872 "sg.y" /* yacc.c:1646  */
+#line 850 "sg.y" /* yacc.c:1646  */
     { sgTimeElementAdd((yyvsp[0].string),T_WEEKLY); }
-#line 3435 "y.tab.c" /* yacc.c:1646  */
+#line 3413 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 251:
-#line 873 "sg.y" /* yacc.c:1646  */
+#line 851 "sg.y" /* yacc.c:1646  */
     { sgTimeElementInit(); }
-#line 3441 "y.tab.c" /* yacc.c:1646  */
+#line 3419 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 252:
-#line 873 "sg.y" /* yacc.c:1646  */
+#line 851 "sg.y" /* yacc.c:1646  */
     { sgTimeElementAdd((yyvsp[0].string),T_WEEKLY); }
-#line 3447 "y.tab.c" /* yacc.c:1646  */
+#line 3425 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 254:
-#line 874 "sg.y" /* yacc.c:1646  */
+#line 852 "sg.y" /* yacc.c:1646  */
     { sgTimeElementInit(); }
-#line 3453 "y.tab.c" /* yacc.c:1646  */
+#line 3431 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 255:
-#line 874 "sg.y" /* yacc.c:1646  */
+#line 852 "sg.y" /* yacc.c:1646  */
     { sgTimeElementEnd(); }
-#line 3459 "y.tab.c" /* yacc.c:1646  */
+#line 3437 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 256:
-#line 875 "sg.y" /* yacc.c:1646  */
+#line 853 "sg.y" /* yacc.c:1646  */
     { ufdbLogFatalError( "invalid time specification at line %d", lineno );   }
-#line 3465 "y.tab.c" /* yacc.c:1646  */
+#line 3443 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 257:
-#line 879 "sg.y" /* yacc.c:1646  */
+#line 857 "sg.y" /* yacc.c:1646  */
     { sgTimeElementClone(); }
-#line 3471 "y.tab.c" /* yacc.c:1646  */
+#line 3449 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 266:
-#line 892 "sg.y" /* yacc.c:1646  */
+#line 870 "sg.y" /* yacc.c:1646  */
     { sgTimeElementAdd( (yyvsp[0].string), T_DVAL ); }
-#line 3477 "y.tab.c" /* yacc.c:1646  */
+#line 3455 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 267:
-#line 895 "sg.y" /* yacc.c:1646  */
+#line 873 "sg.y" /* yacc.c:1646  */
     { sgTimeElementAdd( (yyvsp[0].tval), T_TVAL ); }
-#line 3483 "y.tab.c" /* yacc.c:1646  */
+#line 3461 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 268:
-#line 898 "sg.y" /* yacc.c:1646  */
+#line 876 "sg.y" /* yacc.c:1646  */
     { sgTimeElementAdd( (yyvsp[0].string), T_DVALCRON ); }
-#line 3489 "y.tab.c" /* yacc.c:1646  */
+#line 3467 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 269:
-#line 902 "sg.y" /* yacc.c:1646  */
+#line 880 "sg.y" /* yacc.c:1646  */
     {  yyerror( (char *) "syntax error" );  }
-#line 3495 "y.tab.c" /* yacc.c:1646  */
+#line 3473 "y.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 3499 "y.tab.c" /* yacc.c:1646  */
+#line 3477 "y.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -3723,8 +3701,34 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 983 "sg.y" /* yacc.c:1906  */
+#line 961 "sg.y" /* yacc.c:1906  */
 
+
+static void ApplyGlobalRedirectDefaults()
+{
+  if ( UFDBglobalRedirectURL != NULL ) {
+    strcpy( UFDBglobalRedirectCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectClientCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDBglobalRedirectURL );
+    strcpy( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDBglobalRedirectURL );
+
+    if (!UFDBglobalRedirectStaticURL) {
+      int maxAppendLength = 1024 - strlen(UFDBglobalRedirectURL);
+
+      if (maxAppendLength > 0) {
+	strncat( UFDBglobalRedirectCategoryURL, UFDB_REDIRECTION_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectClientCategoryURL, UFDB_REDIRECTION_CLIENT_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CLIENT_CATEGORY_URL, maxAppendLength );
+	strncat( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_REDIRECT_CLIENT_CATEGORY_URL, maxAppendLength );
+      }
+    } else {
+      strcpy( UFDBglobalRedirectHttps, UFDBglobalRedirectURL );
+      strcpy( UFDBglobalRedirectBumpedHttps, UFDBglobalRedirectURL );
+    }
+  }
+}
 
 int sgReadConfig( 
    char *            file )
@@ -3944,6 +3948,7 @@ int sgReadConfig(
       UFDBglobalSquidHelperProtocol = UFDB_SQUID_HELPER_PROTOCOL2;	/* 3.0 - 3.3 */
 
    BuildImplicitPassLists();
+   ApplyGlobalRedirectDefaults();
 
    return 1;
 }
