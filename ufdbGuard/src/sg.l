@@ -203,6 +203,7 @@ redirect-https              return REDIRECT_HTTPS;
 redirect-bumped-https       return REDIRECT_BUMPED_HTTPS;
 
 redirect-default-url        return REDIRECT_DEFAULT_URL;
+redirect-static-url        return REDIRECT_STATIC_URL;
 
 minutely    	return MINUTELY;
 hourly      	return HOURLY;

@@ -138,7 +138,7 @@ void ufdbFreeDomainDb( struct sgDb * dbp );
 %token USERQUOTA GROUP 
 %token NL NUMBER NUMBERS
 %token PASS REDIRECT SUBST CHAR MINUTELY HOURLY DAILY WEEKLY DATE
-%token REDIRECT_FATAL_ERROR REDIRECT_LOADING_DATABASE REDIRECT_HTTPS REDIRECT_BUMPED_HTTPS REDIRECT_DEFAULT_URL
+%token REDIRECT_FATAL_ERROR REDIRECT_LOADING_DATABASE REDIRECT_HTTPS REDIRECT_BUMPED_HTTPS REDIRECT_DEFAULT_URL REDIRECT_STATIC_URL
 %token WITHIN OUTSIDE ELSE ANONYMOUS SPORADIC
 %token PIDFILE LOGFILE LOGDIR LOGPASS LOGBLOCK LOGALL LOGALL_HTTPD
 %token MAIL_SERVER MY_HOSTNAME ADMIN_EMAIL SENDER_EMAIL EXTERNAL_STATUS_COMMAND
@@ -254,6 +254,10 @@ deny_mode:
 
 reuse_acl_names:
 		  REUSE_ACL_NAMES on_or_off   { UFDBglobalReuseAclNames = $2; }
+		  ;
+
+redirect_static_url:
+		  REDIRECT_STATIC_URL on_or_off   { UFDBglobalRedirectStaticURL = $2; }
 		  ;
 
 debug_filter:
@@ -503,14 +507,16 @@ redirect_default_url:
 
 			ufdbFree( $2 );
 
-			int maxAppendLength = 1024 - strlen(UFDBglobalRedirectURL);
+			if (!UFDBglobalRedirectStaticURL) {
+			  int maxAppendLength = 1024 - strlen(UFDBglobalRedirectURL);
 
-			if (maxAppendLength > 0) {
-			  strncat( UFDBglobalRedirectCategoryURL, UFDB_REDIRECTION_CATEGORY_URL, maxAppendLength );
-			  strncat( UFDBglobalRedirectClientCategoryURL, UFDB_REDIRECTION_CLIENT_CATEGORY_URL, maxAppendLength );
-			  strncat( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CATEGORY_URL, maxAppendLength );
-			  strncat( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CLIENT_CATEGORY_URL, maxAppendLength );
-			  strncat( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_REDIRECT_CLIENT_CATEGORY_URL, maxAppendLength );
+			  if (maxAppendLength > 0) {
+			    strncat( UFDBglobalRedirectCategoryURL, UFDB_REDIRECTION_CATEGORY_URL, maxAppendLength );
+			    strncat( UFDBglobalRedirectClientCategoryURL, UFDB_REDIRECTION_CLIENT_CATEGORY_URL, maxAppendLength );
+			    strncat( UFDBglobalRedirectNoDefaultACLCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CATEGORY_URL, maxAppendLength );
+			    strncat( UFDBglobalRedirectNoDefaultACLClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_ACL_CLIENT_CATEGORY_URL, maxAppendLength );
+			    strncat( UFDBglobalRedirectNoDefaultRedirectClientCategoryURL, UFDB_REDIRECTION_NO_DEFAULT_REDIRECT_CLIENT_CATEGORY_URL, maxAppendLength );
+			  }
 			}
 		     }
 	        ;
@@ -965,6 +971,7 @@ statement:
 		| youtube_edufilter_id
 		| deny_mode
 		| reuse_acl_names
+		| redirect_static_url
 		| max_logfile_size
 	     	| acl_block
 	     	| rew_block
@@ -1016,6 +1023,7 @@ int sgReadConfig(
    UFDBglobalAllowGoogleHTTPSusingIP = 0;
    UFDBglobalDenyMode = 1;
    UFDBglobalReuseAclNames = 1;
+   UFDBglobalRedirectStaticURL = 1;
 
 #if 0
    /* When a database is reloaded, these variables may NOT be reset since they are used during the reload !! */

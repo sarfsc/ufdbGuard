@@ -382,6 +382,7 @@ void UFDBlogConfig( void )
 #endif
    ufdbLogMessage( "deny-mode %s", UFDBglobalDenyMode ? "on" : "off" );
    ufdbLogMessage( "reuse-acl-names %s", UFDBglobalReuseAclNames ? "on" : "off" );
+   ufdbLogMessage( "redirect-static-url %s", UFDBglobalRedirectStaticURL ? "on" : "off" );
 
    if (UFDBglobalDebug > 1)
       ufdbLogMessage( "ufdb-debug-filter %d", UFDBglobalDebug );
