@@ -281,7 +281,7 @@ extern "C" {
 #endif
 
 #ifndef UFDB_DEFAULT_HTTPS_REDIRECTION_URL
-#define UFDB_DEFAULT_HTTPS_REDIRECTION_URL	"blockedhttps.urlfilterdb.com:443"
+#define UFDB_DEFAULT_HTTPS_REDIRECTION_URL	"https://127.0.0.1:55555/123asd.html"
 #endif
 
 #ifndef UFDB_DEFAULT_BUMPED_HTTPS_REDIRECTION_URL

@@ -13,7 +13,7 @@
 
 Name: ufdbGuard
 Version: %{version}
-Release: DenyMode4.CentOS7
+Release: DenyMode5.CentOS7
 Summary: ufdbGuard is a URL filter for Squid
 License: GNU General Public License v2.0 only
 Group: Internet/Proxy
@@ -310,6 +310,9 @@ exit 0
 # TODO
 
 %changelog
+* Thu Nov 29 2018 Evgeny Sinelnikov <sin@altlinux.org> - 1.33.7-DenyMode5
+Fix: set redirect-https by default to: https://127.0.0.1:55555/123asd.html
+
 * Mon Oct 15 2018 Evgeny Sinelnikov <sin@altlinux.org> - 1.33.7-DenyMode4
 Add: support redirect-static-url option (enabled by default)
 
