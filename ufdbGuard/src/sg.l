@@ -117,6 +117,7 @@ logall  		    return LOGALL;
 off                         return OFF;
 on                          return ON;
 deny-mode		    return DENY_MODE;
+firewall-mode		    return FIREWALL_MODE;
 reuse-acl-names		    return REUSE_ACL_NAMES;
 
 option			    return OPTION;

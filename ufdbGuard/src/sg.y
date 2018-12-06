@@ -164,6 +164,7 @@ void ufdbFreeDomainDb( struct sgDb * dbp );
 %token ANALYSE_UNCATEGORISED LOG_UNCATEGORISED_URLS UPLOAD_STATS
 %token SAFE_SEARCH MAX_LOGFILE_SIZE
 %token DENY_MODE
+%token FIREWALL_MODE
 %token REUSE_ACL_NAMES
 
 
@@ -250,6 +251,10 @@ allow_google_https_using_ip:
 
 deny_mode:
 		  DENY_MODE on_or_off   { UFDBglobalDenyMode = $2; }
+		  ;
+
+firewall_mode:
+		  FIREWALL_MODE on_or_off   { UFDBglobalFirewallMode = $2; }
 		  ;
 
 reuse_acl_names:
@@ -948,6 +953,7 @@ statement:
 		| allow_google_https_using_ip
 		| youtube_edufilter_id
 		| deny_mode
+		| firewall_mode
 		| reuse_acl_names
 		| redirect_static_url
 		| max_logfile_size
@@ -1026,6 +1032,7 @@ int sgReadConfig(
    UFDBglobalYoutubeEdufilterID = (char *) "none";
    UFDBglobalAllowGoogleHTTPSusingIP = 0;
    UFDBglobalDenyMode = 1;
+   UFDBglobalFirewallMode = 1;
    UFDBglobalReuseAclNames = 1;
    UFDBglobalRedirectStaticURL = 1;
 

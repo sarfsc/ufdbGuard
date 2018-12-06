@@ -381,6 +381,7 @@ void UFDBlogConfig( void )
    ufdbLogMessage( "allow-google-https-using-ip %s", UFDBglobalAllowGoogleHTTPSusingIP ? "on" : "off" );
 #endif
    ufdbLogMessage( "deny-mode %s", UFDBglobalDenyMode ? "on" : "off" );
+   ufdbLogMessage( "firewall-mode %s", UFDBglobalFirewallMode ? "on" : "off" );
    ufdbLogMessage( "reuse-acl-names %s", UFDBglobalReuseAclNames ? "on" : "off" );
    ufdbLogMessage( "redirect-static-url %s", UFDBglobalRedirectStaticURL ? "on" : "off" );
 

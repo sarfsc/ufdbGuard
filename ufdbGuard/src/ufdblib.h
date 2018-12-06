@@ -40,6 +40,7 @@ extern          int    UFDBglobalUploadStats;
 extern          int    UFDBglobalYoutubeEdufilter;
 extern          int    UFDBglobalAllowGoogleHTTPSusingIP;
 extern          int    UFDBglobalDenyMode;
+extern          int    UFDBglobalFirewallMode;
 extern          int    UFDBglobalReuseAclNames;
 extern          int    UFDBglobalRedirectStaticURL;
 
