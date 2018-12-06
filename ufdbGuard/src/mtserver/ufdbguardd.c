@@ -2842,14 +2842,24 @@ do_next_src:
 	       acl = UFDBfindACLbySource( src, &squidInfo );         /* returns acl of source or defaultAcl */
 	    else {
 	       acl = UFDBfindACLbySourceList(acl, srcList, &squidInfo ); /* returns acl of source list or defaultAcl */
-	       src = acl->source;
-	       if (acl != NULL && src != NULL) {
-	          if (UFDBglobalDebug > 1)
-		     ufdbLogMessage( "W%03d: source %s found in firewall mode with acl %s", 
-				     tnum, src->name, acl->name );
+	       if (acl == NULL)
+	          acl = UFDBfindACLbySource( NULL, &squidInfo );
+	       else
+	          src = acl->source;
+
+	       if (acl != NULL) {
+	          if (src != NULL) {
+	             if (UFDBglobalDebug > 1)
+		        ufdbLogMessage( "W%03d: source %s found in firewall mode with acl %s", 
+				        tnum, src->name, acl->name );
+		  } else {
+	             if (UFDBglobalDebug > 1)
+		        ufdbLogMessage( "W%03d: source not found in firewall mode set \"%s\" acl", 
+				        tnum, acl->name );
+		  }
 	       } else {
 	          if (UFDBglobalDebug > 1)
-		     ufdbLogMessage( "W%03d: acl with source not found in firewall mode with", 
+		     ufdbLogMessage( "W%03d: no default acl in firewall mode with!!!", 
 				     tnum);
 	       }
 	    }
