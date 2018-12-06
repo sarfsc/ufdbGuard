@@ -266,6 +266,11 @@ int ufdbguard_main( int argc, char ** argv, char ** envp )
   else
     ufdbLogMessage( "ufdbGuard started in standard ALLOW mode.");
 
+  if (UFDBglobalFirewallMode)
+    ufdbLogMessage( "ufdbGuard started in Firewall mode.");
+  else
+    ufdbLogMessage( "ufdbGuard started in standard \"source by source\" mode.");
+
   gettimeofday( &ready_time, NULL );
   ready_time.tv_sec = ready_time.tv_sec + globalDebugTimeDelta;
   ufdbLogMessage( "ufdbGuard ready for requests at %ld.%03ld",

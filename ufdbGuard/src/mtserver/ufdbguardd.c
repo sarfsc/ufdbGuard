@@ -2832,12 +2832,30 @@ static void * worker_main( void * ptr )
 	 {
 	    const char *    categoryIdent;
 	    const char *    ACLident;
+	    struct Source * srcList;
 
 	    src = UFDBfindSource( src, &squidInfo );
+	    srcList = src;
+	    acl = AclList;
 do_next_src:
+	    if (!UFDBglobalFirewallMode)
+	       acl = UFDBfindACLbySource( src, &squidInfo );         /* returns acl of source or defaultAcl */
+	    else {
+	       acl = UFDBfindACLbySourceList(acl, srcList, &squidInfo ); /* returns acl of source list or defaultAcl */
+	       src = acl->source;
+	       if (acl != NULL && src != NULL) {
+	          if (UFDBglobalDebug > 1)
+		     ufdbLogMessage( "W%03d: source %s found in firewall mode with acl %s", 
+				     tnum, src->name, acl->name );
+	       } else {
+	          if (UFDBglobalDebug > 1)
+		     ufdbLogMessage( "W%03d: acl with source not found in firewall mode with", 
+				     tnum);
+	       }
+	    }
 	    if (src != NULL)
 	       src->nmatches++;			/* no atomic increment: we may loose a few, no problem */
-	    acl = UFDBfindACLbySource( src, &squidInfo );       /* returns acl of source or defaultAcl */
+
 
 do_next_acl:
 	    if (parseOnly)
@@ -2999,7 +3017,7 @@ do_next_acl:
 	    }
 
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalReuseAclNames  &&  
-                acl != NULL)
+                !UFDBglobalFirewallMode  &&  acl != NULL)
             {
                struct Acl * nextacl;
                nextacl = UFDBfindNextACLforSource( acl, src, &squidInfo );
@@ -3014,7 +3032,7 @@ do_next_acl:
             }
 
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  !squidInfo.matchedAny  &&  
-                src != NULL  &&  src->cont_search  &&  src->next != NULL)
+                !UFDBglobalFirewallMode  && src != NULL  &&  src->cont_search  &&  src->next != NULL)
             {
                struct Source * nextsrc;
                nextsrc = UFDBfindSource( src->next, &squidInfo );
@@ -3025,6 +3043,20 @@ do_next_acl:
                                      tnum, src->name, nextsrc->name );
                   src = nextsrc;
                   goto do_next_src;
+               }
+            }
+
+            if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalFirewallMode  &&
+                acl != NULL  &&  acl->next != NULL);
+            {
+               struct Acl * nextacl = UFDBfindACLbySourceList(acl->next, srcList, &squidInfo );
+               if (nextacl != NULL) {
+                  acl = nextacl;
+                  src = acl->source;
+                  if (UFDBglobalDebug > 1)
+                     ufdbLogMessage( "W%03d: next acl %s with source %s found in firewall mode with acl", 
+                                     tnum, acl->name, src->name );
+                  goto do_next_acl;
                }
             }
 

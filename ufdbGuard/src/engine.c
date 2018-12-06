@@ -634,6 +634,71 @@ struct Source * UFDBfindSource(
 
 
 /*
+ *  called by main loop (in firewall-mode): find an acl by one of sources
+ */
+UFDB_GCC_HOT
+struct Acl * UFDBfindACLbySourceList(
+   struct Acl *       allAcls,
+   struct Source *    allSrcs,
+   struct SquidInfo * si )
+{
+   struct Source *    src;
+   struct Acl *       acl;
+   struct Acl *       retval = NULL;
+ 
+   if (UFDBglobalFatalError  ||  UFDBglobalReconfig)
+   {
+#if UFDB_DEBUG_ACL_ACCESS
+      ufdbLogMessage( "W%03d: UFDBfindACLbySourceList: fatal-error or reconfig: returning NULL", si->worker );
+#endif
+      return NULL;
+   }
+
+#if UFDB_DEBUG_ACL_ACCESS
+   if (UFDBglobalDebug > 2)
+      ufdbLogMessage( "W%03d: UFDBfindACLbySourceList  id '%s'  srcIP '%s'  source_isipv4 %d  source_isipv6 %d",
+                      si->worker,
+                      si->ident, 
+		      si->srcIP,
+                      si->source_isipv4, 
+                      si->source_isipv6 );
+#endif
+
+   if (allAcls == NULL || allSrcs == NULL)
+   {
+      /* allSrcs and allAcls may be NULL if there is a configuration with only the default rule */
+      return NULL;
+   }
+
+   for (acl = allAcls;  acl != NULL;  acl = acl->next)
+   {
+      for (src = allSrcs; src != NULL; src = UFDBfindSource(src->next, si))
+      {
+         if (acl->source == src)
+         {
+            retval = acl;
+
+            if (UFDBglobalDebug > 2)
+               ufdbLogMessage( "W%03d: UFDBfindACLbySourceList: found acl %s for source %s",
+                               si->worker, acl->name == NULL ? "noname" : acl->name, src->name == NULL ? "noname" : src->name );
+            return retval;
+         }
+      }
+   }
+
+#if UFDB_DEBUG_ACL_ACCESS
+   if (UFDBglobalDebug)
+      ufdbLogMessage( "W%03d: UFDBfindACLbySourceList: no active ACL for sourceList found, returning defaultAcl", 
+                      si->worker, src->name );
+#endif
+
+   if (UFDBglobalDebug > 2)
+      ufdbLogMessage( "W%03d: UFDBfindACLbySourceList: NO ACL matched", si->worker );
+   return NULL;
+}
+
+
+/*
  * called by main loop: find the first active ACL that matches a source
  */
 UFDB_GCC_HOT
