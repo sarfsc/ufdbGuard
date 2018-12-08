@@ -3145,7 +3145,7 @@ yyreduce:
 
   case 181:
 #line 705 "sg.y" /* yacc.c:1646  */
-    { lastSource->cont_search = 1; }
+    { lastSource->cont_search = UFDBglobalFirewallMode ? 0 : 1; }
 #line 3150 "y.tab.c" /* yacc.c:1646  */
     break;
 
@@ -4022,7 +4022,7 @@ void defSource(
    sp->userDb = NULL;
    sp->time = NULL;
    sp->within = UFDB_ACL_NONE;
-   sp->cont_search = UFDBglobalDenyMode ? 1 : 0;
+   sp->cont_search = (UFDBglobalDenyMode && !UFDBglobalFirewallMode) ? 1 : 0;
    sp->sarg0 = NULL;
    sp->userquota.seconds = 0;
    sp->userquota.renew = 0;

@@ -702,7 +702,7 @@ source_content:
 						   ufdbFree( $2 ); }
                 | LOGFILE WORD            	 { ufdbLogError( "line %d: unsupported logfile context for %s", lineno, $2 ); 
 						   ufdbFree( $2 ); }
-                | CONTINUE                	 { lastSource->cont_search = 1; }
+                | CONTINUE                	 { lastSource->cont_search = UFDBglobalFirewallMode ? 0 : 1; }
                 ;
 
 
@@ -1272,7 +1272,7 @@ void defSource(
    sp->userDb = NULL;
    sp->time = NULL;
    sp->within = UFDB_ACL_NONE;
-   sp->cont_search = UFDBglobalDenyMode ? 1 : 0;
+   sp->cont_search = (UFDBglobalDenyMode && !UFDBglobalFirewallMode) ? 1 : 0;
    sp->sarg0 = NULL;
    sp->userquota.seconds = 0;
    sp->userquota.renew = 0;
