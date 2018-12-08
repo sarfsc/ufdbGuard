@@ -670,10 +670,29 @@ struct Acl * UFDBfindACLbySourceList(
       return NULL;
    }
 
+   si->matchedBy[0] = '\0';
+
    for (acl = allAcls;  acl != NULL;  acl = acl->next)
    {
-      for (src = allSrcs; src != NULL; src = UFDBfindSource(src->next, si))
+      for (src = allSrcs; src != NULL; src = src->next)
       {
+         struct Source * s = src;
+
+         if (s->active == 0)
+            continue;
+
+         if (s->evaluationMethod == UFDB_EVAL_OR)
+            s = matchSourceOR( s, si );
+         else
+            s = matchSourceAND( s, si );
+
+         if (s == NULL) {
+            if (UFDBglobalDebug > 2)
+               ufdbLogMessage( "W%03d: UFDBfindACLbySourceList: source %s no matched with evaluation '%s'",
+                               si->worker, src->name == NULL ? "noname" : src->name, src->evaluationMethod == UFDB_EVAL_OR ? "OR" : "AND" );
+            continue;
+         }
+
          if (acl->source == src)
          {
             retval = acl;
@@ -689,7 +708,7 @@ struct Acl * UFDBfindACLbySourceList(
 #if UFDB_DEBUG_ACL_ACCESS
    if (UFDBglobalDebug)
       ufdbLogMessage( "W%03d: UFDBfindACLbySourceList: no active ACL for sourceList found, returning defaultAcl", 
-                      si->worker, src->name );
+                      si->worker );
 #endif
 
    if (UFDBglobalDebug > 2)
