@@ -3057,7 +3057,7 @@ do_next_acl:
             }
 
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalFirewallMode  &&
-                acl != NULL  &&  acl->next != NULL);
+                acl != NULL  &&  acl->next != NULL)
             {
                struct Acl * nextacl = UFDBfindACLbySourceList(acl->next, srcList, &squidInfo );
                if (nextacl != NULL) {
