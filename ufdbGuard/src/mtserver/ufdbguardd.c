@@ -2928,9 +2928,6 @@ do_next_acl:
 	       }
 	    }
 
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check1 for decision = %d", squidInfo.worker, decision );
-
 	    if (decision == UFDB_ACL_ACCESS_DUNNO  && 					/* HTTPS probing */
 		!squidInfo.BlockedBumpedConnectAllowed  &&
 	        (squidInfo.port == 443  ||  isconnect))
@@ -3029,9 +3026,6 @@ do_next_acl:
                }
 	    }
 
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check2 for decision = %d", squidInfo.worker, decision );
-
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalReuseAclNames  &&  
                 !UFDBglobalFirewallMode  &&  acl != NULL)
             {
@@ -3046,9 +3040,6 @@ do_next_acl:
                   goto do_next_acl;
                }
             }
-
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check3 for decision = %d", squidInfo.worker, decision );
 
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  !squidInfo.matchedAny  &&  
                 !UFDBglobalFirewallMode  && src != NULL  &&  src->cont_search  &&  src->next != NULL)
@@ -3065,9 +3056,6 @@ do_next_acl:
                }
             }
 
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check4 for decision = %d", squidInfo.worker, decision );
-
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalFirewallMode  &&
                 acl != NULL  &&  acl->next != NULL)
             {
@@ -3082,9 +3070,6 @@ do_next_acl:
                }
             }
 
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check5 for decision = %d", squidInfo.worker, decision );
-
             if (decision == UFDB_ACL_ACCESS_DUNNO  &&  UFDBglobalDenyMode)
             {
                { 
@@ -3095,9 +3080,6 @@ do_next_acl:
                                      squidInfo.domain, squidInfo.port );
                }
             }
-
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check6 for decision = %d", squidInfo.worker, decision );
 
 	    if (decision == UFDB_ACL_ACCESS_DUNNO  &&  squidInfo.port != 80  &&  
                 !squidInfo.BlockedBumpedConnectAllowed)
@@ -3112,9 +3094,6 @@ do_next_acl:
 				  tnum, squidInfo.orig_domain, squidInfo.port, squidInfo.aclpass->name );
 	    }
 
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check7 for decision = %d", squidInfo.worker, decision );
-
 	    if (UFDBglobalDebugRedirect)
 	    {
 	       ufdbLogMessage( "W%03d:   REDIRECT %s %s %s %s", tnum,
@@ -3125,9 +3104,6 @@ do_next_acl:
 			       squidInfo.ident, 
 			       squidInfo.method );
 	    }
-
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check8 for decision = %d, reason = %d", squidInfo.worker, decision, squidInfo.blockReason );
 
 	    if (squidInfo.blockReason == UFDB_API_BLOCKR_FATAL_ERROR)
 	    {
@@ -3190,9 +3166,6 @@ do_next_acl:
 	       else 
 		  categoryIdent = squidInfo.aclpass->name;
 	    }
-
-	 if (UFDBglobalDebug > 3)
-            ufdbLogMessage( "W%03d: check9 for decision = %d, ident = %s", squidInfo.worker, decision, ACLident );
 
 	    if (decision == UFDB_ACL_ACCESS_ALLOW  &&  squidInfo.blockReason == UFDB_API_BLOCKR_SAFESEARCH)
 	    {
@@ -3336,10 +3309,6 @@ do_next_acl:
 	    }
 	    else			/* decision == UFDB_ACL_ACCESS_BLOCK */
 	    {
-
-	 if (UFDBglobalDebug > 3)
-               ufdbLogMessage( "W%03d: check10 for decision = %d", squidInfo.worker, decision );
-
 	       if (testMode)
 	       {
 		  ufdbLogMessage( "TEST-%-5s %s %s %s %s %s %s %s",

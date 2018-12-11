@@ -23,7 +23,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define UFDB_DEBUG_ACL_ACCESS 1
+#define UFDB_DEBUG_ACL_ACCESS 0
 
 
 UFDB_GCC_ALIGN64 pthread_rwlock_t  TheDynamicSourcesLock;
